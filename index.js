@@ -178,7 +178,8 @@ screenshotField.addEventListener('mouseover', () => {
     const screenshotUrl = screenshotField.value.trim();
     if (screenshotUrl && screenshotUrl !== "N/A") {
         screenshotPopup = document.createElement('img');
-        screenshotPopup.src = screenshotUrl;
+        screenshotPopup.crossOrigin = "anonymous";
+        screenshotPopup.src =  screenshotUrl;
         screenshotPopup.style.position = 'fixed';
         screenshotPopup.style.top = `${screenshotField.getBoundingClientRect().top + window.scrollY - 150}px`;
         screenshotPopup.style.left = `${screenshotField.getBoundingClientRect().left + window.scrollX}px`;
