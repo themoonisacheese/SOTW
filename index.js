@@ -46,47 +46,66 @@ document.getElementById('autofetch').addEventListener('click', async () => {
 
             if (answerData.items && answerData.items.length > 0) {
                 const acceptedAnswer = answerData.items[0];
-                const parser = new DOMParser();
-                const doc = parser.parseFromString(acceptedAnswer.body, "text/html");
-                const imgTag = doc.querySelector("img");
-                const screenshotUrl = imgTag ? imgTag.src : "N/A";
+                processAnswer(acceptedAnswer, lastPost, sotwNumber);
+            } else {
+                alert("No accepted answer found for the post.");
+            }
+        } else {
+            // Fetch the answer with the most upvotes
+            const answersApiUrl = `https://api.stackexchange.com/2.3/questions/${lastPost.question_id}/answers?order=desc&sort=votes&site=gaming.meta.stackexchange.com&filter=withbody`;
+            const answersResponse = await fetch(answersApiUrl);
+            const answersData = await answersResponse.json();
 
-                const tagElements = doc.querySelectorAll("a.post-tag");
-                const tags = Array.from(tagElements).map(tag => tag.textContent).join(", ");
+            if (answersData.items && answersData.items.length > 0) {
+                const topAnswer = answersData.items[0];
+                processAnswer(topAnswer, lastPost, sotwNumber);
+            } else {
+                alert("No answers found for the post.");
+            }
+        }
 
-                document.getElementById('winning-id').value = acceptedAnswer.answer_id || "N/A";
-                document.getElementById('user').value = acceptedAnswer.owner.display_name || "N/A";
-                document.getElementById('screenshot').value = screenshotUrl;
-                document.getElementById('tag').value = tags || "N/A";
-                document.getElementById('upvotes').value = acceptedAnswer.score || "N/A";
+        function processAnswer(answer, post, sotwNumber) {
+            const parser = new DOMParser();
+            const doc = parser.parseFromString(answer.body, "text/html");
+            const imgTag = doc.querySelector("img");
+            const screenshotUrl = imgTag ? imgTag.src : "N/A";
 
-                const themeTitle = document.getElementById('theme-title').value.trim() || "There is no theme this week";
-                const themeDescription = document.getElementById('theme-description').value.trim() || "There is no theme this week";
-                
-                const closeDate = new Date();
-                closeDate.setDate(closeDate.getDate() + 7); // Add 7 days for submission period
-                const finishDate = new Date(closeDate);
-                finishDate.setDate(finishDate.getDate() + 7); // Add 7 days for voting period
+            const tagElements = doc.querySelectorAll("a.post-tag");
+            const tags = Array.from(tagElements).map(tag => tag.textContent).join(", ");
 
-                const closeDateString = closeDate.toLocaleDateString("en-US", { year: 'numeric', month: 'long', day: 'numeric' });
-                const finishDateString = finishDate.toLocaleDateString("en-US", { year: 'numeric', month: 'long', day: 'numeric' });
+            document.getElementById('winning-id').value = answer.answer_id || "N/A";
+            document.getElementById('user').value = answer.owner.display_name || "N/A";
+            document.getElementById('screenshot').value = screenshotUrl;
+            document.getElementById('tag').value = tags || "N/A";
+            document.getElementById('upvotes').value = answer.score || "N/A";
 
-                const sotwNumberWithPostfix = (number) => {
-                    const suffixes = ["th", "st", "nd", "rd"];
-                    const value = number % 100;
-                    return number + (suffixes[(value - 20) % 10] || suffixes[value] || suffixes[0]);
-                };
+            const themeTitle = document.getElementById('theme-title').value.trim() || "There is no theme this week";
+            const themeDescription = document.getElementById('theme-description').value.trim() || "There is no theme this week";
 
-                const nextSotwNumber = parseInt(sotwNumber, 10) + 1;
-                const nextSotwNumberWithPostfix = sotwNumberWithPostfix(nextSotwNumber);
+            const closeDate = new Date();
+            closeDate.setDate(closeDate.getDate() + 7); // Add 7 days for submission period
+            const finishDate = new Date(closeDate);
+            finishDate.setDate(finishDate.getDate() + 7); // Add 7 days for voting period
 
-                const template = `<!-- # This contest is over.
+            const closeDateString = closeDate.toLocaleDateString("en-US", { year: 'numeric', month: 'long', day: 'numeric' });
+            const finishDateString = finishDate.toLocaleDateString("en-US", { year: 'numeric', month: 'long', day: 'numeric' });
+
+            const sotwNumberWithPostfix = (number) => {
+                const suffixes = ["th", "st", "nd", "rd"];
+                const value = number % 100;
+                return number + (suffixes[(value - 20) % 10] || suffixes[value] || suffixes[0]);
+            };
+
+            const nextSotwNumber = parseInt(sotwNumber, 10) + 1;
+            const nextSotwNumberWithPostfix = sotwNumberWithPostfix(nextSotwNumber);
+
+            const template = `<!-- # This contest is over.
 
 *[previous contest][contest prev] | [next contest][contest next]* -->
 
 Hello and welcome to the **${nextSotwNumberWithPostfix}** edition of the Screenshot of the Week!
 
-To start with, congratulations to the winner of the previous contest! [${acceptedAnswer.owner.display_name}][winning post]'s screenshot from [tag:${tags}] won with ${acceptedAnswer.score} upvotes!
+To start with, congratulations to the winner of the previous contest! [${answer.owner.display_name}][winning post]'s screenshot from [tag:${tags}] won with ${answer.score} upvotes!
 
 [![Last week's winning screenshot one][winning screenshot]][winning screenshot]
 
@@ -114,22 +133,17 @@ ${themeDescription}
 
 As a reminder, we're always accepting suggestions for themed weeks, and have compiled that suggestion process into a [question of its own][themes collection]. Additionally, there is the [hall of fame][hall of fame] you can check out that contains all the previous contest winners.
 
-  [contest prev]:       //meta.arqade.com/q/${lastPost.question_id}
+  [contest prev]:       //meta.arqade.com/q/${post.question_id}
   [contest next]:       //meta.arqade.com/q/17226
 
-  [winning post]:       https://gaming.meta.stackexchange.com/a/${lastPost.question_id}/${acceptedAnswer.answer_id}
+  [winning post]:       https://gaming.meta.stackexchange.com/a/${post.question_id}/${answer.answer_id}
   [winning screenshot]: ${screenshotUrl}
 
   [code of conduct]:   //arqade.com/conduct
   [themes collection]: //meta.arqade.com/q/15029
   [hall of fame]:      //meta.arqade.com/q/14939`;
 
-                document.getElementById('results').value = template.trim();
-            } else {
-                alert("No accepted answer found for the post.");
-            }
-        } else {
-            alert("No accepted answer ID found for the post.");
+            document.getElementById('results').value = template.trim();
         }
     } catch (error) {
         console.error("Error fetching data from Stack Exchange API:", error);
