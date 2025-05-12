@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<!--[if lt IE 7]>      <html class="no-js lt-ie9 lt-ie8 lt-ie7"> <![endif]-->
+<!--[if IE 7]>         <html class="no-js lt-ie9 lt-ie8"> <![endif]-->
+<!--[if IE 8]>         <html class="no-js lt-ie9"> <![endif]-->
+<!--[if gt IE 8]>      <html class="no-js"> <!--<![endif]-->
+<html>
+    <head>
+        <meta charset="utf-8">
+        <meta http-equiv="X-UA-Compatible" content="IE=edge">
+        <title>SOTW editor</title>
+        <meta name="description" content="">
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+        <link rel="stylesheet" href="index.css">
+    </head>
+    <body>
+        <h1>SOTW Generator</h1>
+        <form id="generator-form">
+            <label for="theme-title">Theme Title:</label>
+            <input type="text" id="theme-title" name="theme-title" />
+
+            <label for="theme-description">Theme Description:</label>
+            <textarea id="theme-description" name="theme-description"></textarea>
+
+            <label for="sotw-number">SOTW Number:</label>
+            <input type="text" id="sotw-number" placeholder="SOTW number" disabled />
+
+            <label for="previous-id">Previous ID:</label>
+            <input type="text" id="previous-id" placeholder="Previous ID" />
+
+            <label for="winning-id">Winning ID:</label>
+            <input type="text" id="winning-id" placeholder="Winning ID" disabled />
+
+            <label for="tag">Tag:</label>
+            <input type="text" id="tag" placeholder="Tag" disabled />
+
+            <label for="user">User:</label>
+            <input type="text" id="user" placeholder="User" disabled />
+
+            <label for="screenshot">Screenshot:</label>
+            <input type="text" id="screenshot" placeholder="Screenshot" disabled />
+
+            <label for="upvotes">Upvotes:</label>
+            <input type="text" id="upvotes" placeholder="Upvotes" disabled />
+
+            <button type="button" id="autofetch">Autofetch</button>
+
+            <label for="results">Results:</label>
+            <textarea id="results" placeholder="Generated results will appear here" disabled></textarea>
+
+            <button type="button" id="copy-to-clipboard">Copy to Clipboard</button>
+        </form>
+        <script src="index.js"></script>
+        <!--[if lt IE 7]>
+            <p class="browsehappy">You are using an <strong>outdated</strong> browser. Please <a href="#">upgrade your browser</a> to improve your experience.</p>
+        <![endif]-->
+    </body>
+</html>
