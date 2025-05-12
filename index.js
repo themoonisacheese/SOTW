@@ -179,7 +179,7 @@ screenshotField.addEventListener('mouseover', () => {
     if (screenshotUrl && screenshotUrl !== "N/A") {
         screenshotPopup = document.createElement('img');
         screenshotPopup.crossOrigin = "anonymous";
-        screenshotPopup.src = "https://cors-proxy.fringe.zone/"+ screenshotUrl;
+        screenshotPopup.src =  screenshotUrl;
         screenshotPopup.style.position = 'fixed';
         screenshotPopup.style.top = `${screenshotField.getBoundingClientRect().top + window.scrollY - 150}px`;
         screenshotPopup.style.left = `${screenshotField.getBoundingClientRect().left + window.scrollX}px`;
