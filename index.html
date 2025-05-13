@@ -40,7 +40,10 @@
                     <input type="text" id="user" placeholder="User" disabled />
 
                     <label for="screenshot">Screenshot:</label>
-                    <input type="text" id="screenshot" placeholder="Screenshot" disabled />
+                    <div style="display: flex; gap: 10px; align-items: center;">
+                        <input type="text" id="screenshot" placeholder="Screenshot" disabled />
+                        <button type="button" id="view-screenshot">View</button>
+                    </div>
 
                     <label for="upvotes">Upvotes:</label>
                     <input type="text" id="upvotes" placeholder="Upvotes" disabled />
@@ -49,10 +52,13 @@
 
             <button type="button" id="autofetch">Generate!</button>
 
-            <label for="results">Results:</label>
-            <textarea id="results" placeholder="Generated results will appear here" disabled></textarea>
-
-            <button type="button" id="copy-to-clipboard">Copy to Clipboard</button>
+            <div style="display: flex; gap: 20px;">
+                <div style="flex: 1; display: flex; flex-direction: column;">
+                    <label for="results">Post Results:</label>
+                    <textarea id="results" placeholder="Generated results will appear here" disabled></textarea>
+                    <button type="button" id="copy-post">Copy Post</button>
+                </div>
+            </div>
         </form>
         <script src="index.js"></script>
         <!--[if lt IE 7]>

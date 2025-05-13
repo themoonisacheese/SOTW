@@ -151,11 +151,9 @@ As a reminder, we're always accepting suggestions for themed weeks, and have com
     }
 });
 
-document.getElementById('copy-to-clipboard').addEventListener('click', () => {
-    const results = document.getElementById('results');
-    navigator.clipboard.writeText(results.value)
+function showNotification(message) {
     const notification = document.createElement('div');
-    notification.textContent = 'Results copied to clipboard!';
+    notification.textContent = message;
     notification.style.position = 'fixed';
     notification.style.bottom = '10px';
     notification.style.right = '10px';
@@ -169,41 +167,15 @@ document.getElementById('copy-to-clipboard').addEventListener('click', () => {
     setTimeout(() => {
         document.body.removeChild(notification);
     }, 3000);
+}
+
+
+document.getElementById('copy-post').addEventListener('click', () => {
+    const results = document.getElementById('results');
+    navigator.clipboard.writeText(results.value);
+    showNotification('Post copied to clipboard!');
 });
 
-const screenshotField = document.getElementById('screenshot');
-let screenshotPopup;
-
-screenshotField.addEventListener('mouseover', () => {
-    const screenshotUrl = screenshotField.value.trim();
-    if (screenshotUrl && screenshotUrl !== "N/A") {
-        screenshotPopup = document.createElement('iframe');
-        screenshotPopup.src = screenshotUrl;
-        screenshotPopup.style.position = 'fixed';
-        screenshotPopup.style.top = `${screenshotField.getBoundingClientRect().top + window.scrollY - 150}px`;
-        screenshotPopup.style.left = `${screenshotField.getBoundingClientRect().left + window.scrollX}px`;
-        screenshotPopup.style.width = '200px';
-        screenshotPopup.style.height = '150px';
-        screenshotPopup.style.border = '1px solid #ccc';
-        screenshotPopup.style.boxShadow = '0 4px 8px rgba(0, 0, 0, 0.2)';
-        screenshotPopup.style.backgroundColor = '#fff';
-        document.body.appendChild(screenshotPopup);
-    }
-});
-
-screenshotField.addEventListener('mouseout', () => {
-    if (screenshotPopup) {
-        document.body.removeChild(screenshotPopup);
-        screenshotPopup = null;
-    }
-});
-
-screenshotField.addEventListener('mousemove', (event) => {
-    if (screenshotPopup) {
-        screenshotPopup.style.top = `${event.clientY + 20}px`; // 20 pixels below the mouse
-        screenshotPopup.style.left = `${event.clientX - screenshotPopup.offsetWidth / 2}px`; // Center horizontally
-    }
-});
 
 document.getElementById('toggle-more-info').addEventListener('click', () => {
     const moreInfo = document.getElementById('more-info');
@@ -211,5 +183,14 @@ document.getElementById('toggle-more-info').addEventListener('click', () => {
         moreInfo.style.display = 'block';
     } else {
         moreInfo.style.display = 'none';
+    }
+});
+
+document.getElementById('view-screenshot').addEventListener('click', () => {
+    const screenshotUrl = document.getElementById('screenshot').value.trim();
+    if (screenshotUrl && screenshotUrl !== "N/A") {
+        window.open(screenshotUrl, '_blank');
+    } else {
+        alert("No valid screenshot URL available.");
     }
 });
