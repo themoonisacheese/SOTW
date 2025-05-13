@@ -177,14 +177,13 @@ let screenshotPopup;
 screenshotField.addEventListener('mouseover', () => {
     const screenshotUrl = screenshotField.value.trim();
     if (screenshotUrl && screenshotUrl !== "N/A") {
-        screenshotPopup = document.createElement('img');
-        screenshotPopup.crossOrigin = "anonymous";
-        screenshotPopup.src =  screenshotUrl;
+        screenshotPopup = document.createElement('iframe');
+        screenshotPopup.src = screenshotUrl;
         screenshotPopup.style.position = 'fixed';
         screenshotPopup.style.top = `${screenshotField.getBoundingClientRect().top + window.scrollY - 150}px`;
         screenshotPopup.style.left = `${screenshotField.getBoundingClientRect().left + window.scrollX}px`;
         screenshotPopup.style.width = '200px';
-        screenshotPopup.style.height = 'auto';
+        screenshotPopup.style.height = '150px';
         screenshotPopup.style.border = '1px solid #ccc';
         screenshotPopup.style.boxShadow = '0 4px 8px rgba(0, 0, 0, 0.2)';
         screenshotPopup.style.backgroundColor = '#fff';
@@ -203,5 +202,14 @@ screenshotField.addEventListener('mousemove', (event) => {
     if (screenshotPopup) {
         screenshotPopup.style.top = `${event.clientY + 20}px`; // 20 pixels below the mouse
         screenshotPopup.style.left = `${event.clientX - screenshotPopup.offsetWidth / 2}px`; // Center horizontally
+    }
+});
+
+document.getElementById('toggle-more-info').addEventListener('click', () => {
+    const moreInfo = document.getElementById('more-info');
+    if (moreInfo.style.display === 'none' || moreInfo.style.display === '') {
+        moreInfo.style.display = 'block';
+    } else {
+        moreInfo.style.display = 'none';
     }
 });

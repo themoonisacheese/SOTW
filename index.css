@@ -70,3 +70,29 @@ input:disabled, textarea:disabled {
 img {
     pointer-events: none; /* Prevent interaction with the popup image */
 }
+
+#more-info-container {
+    margin-top: 10px;
+}
+
+#toggle-more-info {
+    background-color: #00509e; /* Lighter blue */
+    color: white;
+    border: none;
+    border-radius: 5px;
+    padding: 10px;
+    cursor: pointer;
+    transition: background-color 0.3s;
+}
+
+#toggle-more-info:hover {
+    background-color: #003366; /* Darker blue on hover */
+}
+
+#more-info {
+    margin-top: 10px;
+    padding: 10px;
+    border: 1px solid #003366; /* Dark blue border */
+    border-radius: 5px;
+    background-color: #f9f9f9; /* Light gray background */
+}

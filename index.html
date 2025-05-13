@@ -21,26 +21,31 @@
             <label for="theme-description">Theme Description:</label>
             <textarea id="theme-description" name="theme-description"></textarea>
 
-            <label for="sotw-number">SOTW Number:</label>
-            <input type="text" id="sotw-number" placeholder="SOTW number" disabled />
+            <div id="more-info-container">
+                <button type="button" id="toggle-more-info">More Info</button>
+                <div id="more-info" style="display: none;">
+                    <label for="sotw-number">SOTW Number:</label>
+                    <input type="text" id="sotw-number" placeholder="SOTW number" disabled />
 
-            <label for="previous-id">Previous ID:</label>
-            <input type="text" id="previous-id" placeholder="Previous ID" />
+                    <label for="previous-id">Previous ID:</label>
+                    <input type="text" id="previous-id" placeholder="Previous ID" />
 
-            <label for="winning-id">Winning ID:</label>
-            <input type="text" id="winning-id" placeholder="Winning ID" disabled />
+                    <label for="winning-id">Winning ID:</label>
+                    <input type="text" id="winning-id" placeholder="Winning ID" disabled />
 
-            <label for="tag">Tag:</label>
-            <input type="text" id="tag" placeholder="Tag" disabled />
+                    <label for="tag">Tag:</label>
+                    <input type="text" id="tag" placeholder="Tag" disabled />
 
-            <label for="user">User:</label>
-            <input type="text" id="user" placeholder="User" disabled />
+                    <label for="user">User:</label>
+                    <input type="text" id="user" placeholder="User" disabled />
 
-            <label for="screenshot">Screenshot:</label>
-            <input type="text" id="screenshot" placeholder="Screenshot" disabled />
+                    <label for="screenshot">Screenshot:</label>
+                    <input type="text" id="screenshot" placeholder="Screenshot" disabled />
 
-            <label for="upvotes">Upvotes:</label>
-            <input type="text" id="upvotes" placeholder="Upvotes" disabled />
+                    <label for="upvotes">Upvotes:</label>
+                    <input type="text" id="upvotes" placeholder="Upvotes" disabled />
+                </div>
+            </div>
 
             <button type="button" id="autofetch">Autofetch</button>
 
