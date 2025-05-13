@@ -1,13 +1,13 @@
 body {
     font-family: Arial, sans-serif;
     margin: 20px;
-    background-color: #f0f8ff; /* Light blue background */
-    color: #003366; /* Dark blue text */
+    background-color: #121212; /* Dark background */
+    color: #e0e0e0; /* Light text */
 }
 
 h1 {
     text-align: center;
-    color: #003366; /* Dark blue */
+    color: #ffffff; /* White text */
 }
 
 form {
@@ -16,15 +16,15 @@ form {
     display: flex;
     flex-direction: column;
     gap: 10px;
-    background-color: #ffffff; /* White background for the form */
+    background-color: #1e1e1e; /* Darker background for the form */
     padding: 20px;
     border-radius: 10px;
-    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.5); /* Stronger shadow */
 }
 
 label {
     font-weight: bold;
-    color: #003366; /* Dark blue */
+    color: #e0e0e0; /* Light text */
 }
 
 input, textarea, button {
@@ -32,7 +32,9 @@ input, textarea, button {
     font-size: 14px;
     width: 100%;
     box-sizing: border-box;
-    border: 1px solid #003366; /* Dark blue border */
+    background-color: #2c2c2c; /* Dark input background */
+    color: #ffffff; /* White text */
+    border: 1px solid #444444; /* Darker border */
     border-radius: 5px;
 }
 
@@ -42,7 +44,7 @@ textarea {
 
 button {
     cursor: pointer;
-    background-color: #003366; /* Dark blue */
+    background-color: #444444; /* Dark button background */
     color: white;
     border: none;
     border-radius: 5px;
@@ -50,17 +52,18 @@ button {
 }
 
 button:hover {
-    background-color: #00509e; /* Lighter blue on hover */
+    background-color: #555555; /* Slightly lighter on hover */
 }
 
 button:disabled {
-    background-color: #cccccc;
+    background-color: #333333; /* Darker gray for disabled buttons */
     cursor: not-allowed;
 }
 
 input:disabled, textarea:disabled {
-    background-color: #e0e0e0; /* Light gray background for disabled fields */
-    color: #666666; /* Dark gray text for disabled fields */
+    background-color: #2a2a2a; /* Slightly darker gray for disabled fields */
+    color: #666666; /* Dimmed text for disabled fields */
+    border: 1px dashed #444444; /* Dashed border to indicate disabled state */
 }
 
 #results {
@@ -92,7 +95,7 @@ img {
 #more-info {
     margin-top: 10px;
     padding: 10px;
-    border: 1px solid #003366; /* Dark blue border */
+    border: 1px solid #444444; /* Darker border */
     border-radius: 5px;
-    background-color: #f9f9f9; /* Light gray background */
+    background-color: #1e1e1e; /* Match form background */
 }
