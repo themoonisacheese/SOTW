@@ -136,7 +136,7 @@ As a reminder, we're always accepting suggestions for themed weeks, and have com
   [contest prev]:       //meta.arqade.com/q/${post.question_id}
   [contest next]:       //meta.arqade.com/q/17226
 
-  [winning post]:       https://gaming.meta.stackexchange.com/a/${post.question_id}/${answer.answer_id}
+  [winning post]:       https://gaming.meta.stackexchange.com/a/${answer.answer_id}
   [winning screenshot]: ${screenshotUrl}
 
   [code of conduct]:   //arqade.com/conduct
