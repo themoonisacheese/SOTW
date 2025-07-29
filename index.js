@@ -123,7 +123,7 @@ Also, try to avoid pictures that include spoilers. We want everyone to be able t
 ### How long will the contest run?
 We will accept submissions for a week, until ${closeDateString}, then have a second week-long period where only voting will be accepted. This is to give every submission, even those posted at the end of the first week, a chance to be voted on by everyone.
 
-After the end of the second week, at ${finishDateString}, we will count upvotes only to determine the winning screenshot, which will be featured for a week on the main site's photo widget.
+After the end of the second week, at the end of the day on ${finishDateString}, we will count upvotes only to determine the winning screenshot, which will be featured for a week on the main site's photo widget.
 
 ------------------------
 
