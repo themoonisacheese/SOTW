@@ -79,8 +79,8 @@ document.getElementById('autofetch').addEventListener('click', async () => {
             document.getElementById('tag').value = tags || "N/A";
             document.getElementById('upvotes').value = answer.score || "N/A";
 
-            const themeTitle = document.getElementById('theme-title').value.trim() || "There is no theme this week";
-            const themeDescription = document.getElementById('theme-description').value.trim() || "There is no theme this week";
+            const themeTitle = document.getElementById('theme-title').value.trim()||"";
+            const themeDescription = document.getElementById('theme-description').value.trim() || "";
 
             const closeDate = new Date();
             closeDate.setDate(closeDate.getDate() + 7); // Add 7 days for submission period
@@ -127,7 +127,7 @@ After the end of the second week, at the end of the day on ${finishDateString}, 
 
 ------------------------
 
-# **This week's theme:** ${themeTitle}
+${themeTitle ? "# **This week's theme:** " + themeTitle : "# **No theme this week**"}
 
 ${themeDescription}
 
