@@ -105,7 +105,7 @@ document.getElementById('autofetch').addEventListener('click', async () => {
 
 Hello and welcome to the **${nextSotwNumberWithPostfix}** edition of the Screenshot of the Week!
 
-To start with, congratulations to the winner of the previous contest! [${answer.owner.display_name}][winning post]'s screenshot from [tag:${tags}] won with ${answer.score} upvotes!
+To start with, congratulations to the winner of the previous contest! [${answer.owner.display_name}'s screenshot][winning post] from [tag:${tags}] won with ${answer.score} upvotes!
 
 [![Last week's winning screenshot one][winning screenshot]][winning screenshot]
 
