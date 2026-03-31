@@ -2,6 +2,9 @@ body {
     font-family: Arial, sans-serif;
     margin: 20px;
     background-color: #121212; /* Dark background */
+    background-size: cover;
+    background-position: center;
+    background-attachment: fixed;
     color: #e0e0e0; /* Light text */
 }
 
@@ -16,7 +19,7 @@ form {
     display: flex;
     flex-direction: column;
     gap: 10px;
-    background-color: #1e1e1e; /* Darker background for the form */
+    background-color: rgba(30, 30, 30, 0.85); /* Semi-transparent dark background */
     padding: 20px;
     border-radius: 10px;
     box-shadow: 0 4px 8px rgba(0, 0, 0, 0.5); /* Stronger shadow */

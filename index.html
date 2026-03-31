@@ -14,53 +14,82 @@
     </head>
     <body>
         <h1>SOTW Generator</h1>
-        <form id="generator-form">
-            <label for="theme-title">Theme Title:</label>
-            <input type="text" id="theme-title" name="theme-title" />
+        
+        <div id="tab-buttons" style="margin-bottom: 20px; border-bottom: 2px solid #ccc;">
+            <button class="tab-button active" data-tab="winner-tab" style="padding: 10px 20px; background: none; border: none; cursor: pointer; font-size: 16px; border-bottom: 3px solid #007bff;">Winner Announcement</button>
+            <button class="tab-button" data-tab="hof-tab" style="padding: 10px 20px; background: none; border: none; cursor: pointer; font-size: 16px;">Hall of Fame</button>
+        </div>
 
-            <label for="theme-description">Theme Description:</label>
-            <textarea id="theme-description" name="theme-description"></textarea>
+        <div id="winner-tab" class="tab-content" style="display: block;">
+            <form id="generator-form">
+                <label for="theme-title">Theme Title:</label>
+                <input type="text" id="theme-title" name="theme-title" />
 
-            <div id="more-info-container">
-                <button type="button" id="toggle-more-info">More Info</button>
-                <div id="more-info" style="display: none;">
-                    <label for="sotw-number">SOTW Number:</label>
-                    <input type="text" id="sotw-number" placeholder="SOTW number" disabled />
+                <label for="theme-description">Theme Description:</label>
+                <textarea id="theme-description" name="theme-description"></textarea>
 
-                    <label for="previous-id">Previous ID:</label>
-                    <input type="text" id="previous-id" placeholder="Previous ID" />
+                <div id="more-info-container">
+                    <button type="button" id="toggle-more-info">More Info</button>
+                    <div id="more-info" style="display: none;">
+                        <label for="sotw-number">SOTW Number:</label>
+                        <input type="text" id="sotw-number" placeholder="SOTW number" disabled />
 
-                    <label for="winning-id">Winning ID:</label>
-                    <input type="text" id="winning-id" placeholder="Winning ID" disabled />
+                        <label for="previous-id">Previous ID:</label>
+                        <input type="text" id="previous-id" placeholder="Previous ID" />
 
-                    <label for="tag">Tag:</label>
-                    <input type="text" id="tag" placeholder="Tag" disabled />
+                        <label for="winning-id">Winning ID:</label>
+                        <input type="text" id="winning-id" placeholder="Winning ID" disabled />
 
-                    <label for="user">User:</label>
-                    <input type="text" id="user" placeholder="User" disabled />
+                        <label for="tag">Tag:</label>
+                        <input type="text" id="tag" placeholder="Tag" disabled />
 
-                    <label for="screenshot">Screenshot:</label>
-                    <div style="display: flex; gap: 10px; align-items: center;">
-                        <input type="text" id="screenshot" placeholder="Screenshot" disabled />
-                        <button type="button" id="view-screenshot">View</button>
+                        <label for="user">User:</label>
+                        <input type="text" id="user" placeholder="User" disabled />
+
+                        <label for="screenshot">Screenshot:</label>
+                        <div style="display: flex; gap: 10px; align-items: center;">
+                            <input type="text" id="screenshot" placeholder="Screenshot" disabled />
+                            <button type="button" id="view-screenshot">View</button>
+                        </div>
+
+                        <label for="upvotes">Upvotes:</label>
+                        <input type="text" id="upvotes" placeholder="Upvotes" disabled />
                     </div>
-
-                    <label for="upvotes">Upvotes:</label>
-                    <input type="text" id="upvotes" placeholder="Upvotes" disabled />
                 </div>
-            </div>
 
-            <button type="button" id="autofetch">Generate!</button>
+                <button type="button" id="autofetch">Generate!</button>
 
-            <div style="display: flex; gap: 20px;">
-                <div style="flex: 1; display: flex; flex-direction: column;">
-                    <label for="results">Post Results:</label>
-                    <textarea id="results" placeholder="Generated results will appear here" disabled></textarea>
-                    <button type="button" id="copy-post">Copy Post</button>
+                <div style="display: flex; gap: 20px;">
+                    <div style="flex: 1; display: flex; flex-direction: column;">
+                        <label for="results">Post Results:</label>
+                        <textarea id="results" placeholder="Generated results will appear here" disabled></textarea>
+                        <button type="button" id="copy-post">Copy Post</button>
+                    </div>
                 </div>
-            </div>
-        </form>
+            </form>
+        </div>
+
+        <div id="hof-tab" class="tab-content" style="display: none;">
+            <form id="hof-form">
+                <label for="hof-post-id">Post ID (from announcement):</label>
+                <input type="text" id="hof-post-id" placeholder="Post ID for announced contest" />
+
+                <button type="button" id="hof-generate">Generate Hall of Fame</button>
+
+                <div style="display: flex; gap: 20px;">
+                    <div style="flex: 1; display: flex; flex-direction: column;">
+                        <label for="hof-results">Hall of Fame Markdown:</label>
+                        <textarea id="hof-results" placeholder="Generated hall of fame markdown will appear here" disabled></textarea>
+                        <button type="button" id="hof-copy-post">Copy Hall of Fame Post</button>
+                    </div>
+                </div>
+            </form>
+        </div>
+
+        <script src="processAnswers.js"></script>
         <script src="index.js"></script>
+        <script src="hallOfFameCore.js"></script>
+        <script src="hallOfFame.js"></script>
         <!--[if lt IE 7]>
             <p class="browsehappy">You are using an <strong>outdated</strong> browser. Please <a href="#">upgrade your browser</a> to improve your experience.</p>
         <![endif]-->

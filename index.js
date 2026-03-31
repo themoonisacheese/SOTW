@@ -1,3 +1,69 @@
+// Tab switching functionality
+document.querySelectorAll('.tab-button').forEach(button => {
+    button.addEventListener('click', () => {
+        const tabName = button.getAttribute('data-tab');
+        
+        // Hide all tabs
+        document.querySelectorAll('.tab-content').forEach(tab => {
+            tab.style.display = 'none';
+        });
+        
+        // Remove active class from all buttons
+        document.querySelectorAll('.tab-button').forEach(btn => {
+            btn.classList.remove('active');
+            btn.style.borderBottom = 'none';
+        });
+        
+        // Show selected tab
+        document.getElementById(tabName).style.display = 'block';
+        button.classList.add('active');
+        button.style.borderBottom = '3px solid #007bff';
+    });
+});
+
+/**
+ * API throttle management for Stack Exchange API compliance
+ */
+const apiThrottles = {};
+
+async function waitForBackoff(endpoint) {
+    if (apiThrottles[endpoint] && apiThrottles[endpoint] > Date.now()) {
+        const waitTime = Math.ceil((apiThrottles[endpoint] - Date.now()) / 1000);
+        console.log(`API throttle: waiting ${waitTime}s for ${endpoint}`);
+        await new Promise(resolve => setTimeout(resolve, (apiThrottles[endpoint] - Date.now()) + 100));
+    }
+}
+
+function recordBackoff(endpoint, backoffSeconds) {
+    if (backoffSeconds && backoffSeconds > 0) {
+        apiThrottles[endpoint] = Date.now() + (backoffSeconds * 1000);
+        console.log(`API backoff recorded for ${endpoint}: ${backoffSeconds}s`);
+    }
+}
+
+/**
+ * Fetch with backoff handling
+ */
+async function fetchWithBackoff(url, endpoint) {
+    // Wait for any existing throttle
+    await waitForBackoff(endpoint);
+    
+    try {
+        const response = await fetch(url);
+        const data = await response.json();
+        
+        // Record backoff if present
+        if (data.backoff) {
+            recordBackoff(endpoint, data.backoff);
+        }
+        
+        return data;
+    } catch (error) {
+        console.error(`Fetch error for ${endpoint}:`, error);
+        throw error;
+    }
+}
+
 document.getElementById('autofetch').addEventListener('click', async () => {
     try {
         const previousIdInput = document.getElementById('previous-id').value.trim();
@@ -5,9 +71,8 @@ document.getElementById('autofetch').addEventListener('click', async () => {
 
         if (previousIdInput) {
             // Fetch specific post by ID
-            const specificPostApiUrl = `https://api.stackexchange.com/2.3/questions/${previousIdInput}?site=gaming.meta.stackexchange.com`;
-            const specificPostResponse = await fetch(specificPostApiUrl);
-            const specificPostData = await specificPostResponse.json();
+            const specificPostApiUrl = `https://api.stackexchange.com/2.3/questions/${previousIdInput}?site=gaming.meta.stackexchange.com&filter=withbody`;
+            const specificPostData = await fetchWithBackoff(specificPostApiUrl, 'questions');
 
             if (specificPostData.items && specificPostData.items.length > 0) {
                 lastPost = specificPostData.items[0];
@@ -21,9 +86,8 @@ document.getElementById('autofetch').addEventListener('click', async () => {
             twoWeeksAgo.setDate(twoWeeksAgo.getDate() - 15); // Last 2 weeks + 1 day
             const fromDate = Math.floor(twoWeeksAgo.getTime() / 1000); // Convert to Unix timestamp
 
-            const apiUrl = `https://api.stackexchange.com/2.3/questions?order=desc&sort=creation&tagged=screenshot-of-the-week;featured&site=gaming.meta.stackexchange.com&fromdate=${fromDate}`;
-            const response = await fetch(apiUrl);
-            const data = await response.json();
+            const apiUrl = `https://api.stackexchange.com/2.3/questions?order=desc&sort=creation&tagged=screenshot-of-the-week;featured&site=gaming.meta.stackexchange.com&fromdate=${fromDate}&filter=withbody`;
+            const data = await fetchWithBackoff(apiUrl, 'questions');
 
             if (data.items && data.items.length > 0) {
                 lastPost = data.items[0];
@@ -41,109 +105,68 @@ document.getElementById('autofetch').addEventListener('click', async () => {
 
         if (lastPost.accepted_answer_id) {
             const answerApiUrl = `https://api.stackexchange.com/2.3/answers/${lastPost.accepted_answer_id}?order=desc&sort=activity&site=gaming.meta.stackexchange.com&filter=withbody`;
-            const answerResponse = await fetch(answerApiUrl);
-            const answerData = await answerResponse.json();
+            const answerData = await fetchWithBackoff(answerApiUrl, 'answers');
 
             if (answerData.items && answerData.items.length > 0) {
                 const acceptedAnswer = answerData.items[0];
-                processAnswer(acceptedAnswer, lastPost, sotwNumber);
+                processAnswers([acceptedAnswer], lastPost, sotwNumber);
             } else {
                 alert("No accepted answer found for the post.");
             }
         } else {
-            // Fetch the answer with the most upvotes
+            // Fetch all answers to detect ties (using upvotes only)
             const answersApiUrl = `https://api.stackexchange.com/2.3/questions/${lastPost.question_id}/answers?order=desc&sort=votes&site=gaming.meta.stackexchange.com&filter=withbody`;
-            const answersResponse = await fetch(answersApiUrl);
-            const answersData = await answersResponse.json();
+            const answersData = await fetchWithBackoff(answersApiUrl, 'answers');
 
             if (answersData.items && answersData.items.length > 0) {
-                const topAnswer = answersData.items[0];
-                processAnswer(topAnswer, lastPost, sotwNumber);
+                // Find the maximum upvote count (using score as upvote metric)
+                const maxUpvotes = Math.max(...answersData.items.map(answer => answer.score || 0));
+                
+                // Find all answers with the maximum upvote count (tied winners)
+                const tiedAnswers = answersData.items.filter(answer => (answer.score || 0) === maxUpvotes);
+                
+                processAnswers(tiedAnswers, lastPost, sotwNumber);
             } else {
                 alert("No answers found for the post.");
             }
         }
 
-        function processAnswer(answer, post, sotwNumber) {
-            const parser = new DOMParser();
-            const doc = parser.parseFromString(answer.body, "text/html");
-            const imgTag = doc.querySelector("img");
-            const screenshotUrl = imgTag ? imgTag.src : "N/A";
-
-            const tagElements = doc.querySelectorAll("a.post-tag");
-            const tags = Array.from(tagElements).map(tag => tag.textContent).join(", ");
-
-            document.getElementById('winning-id').value = answer.answer_id || "N/A";
-            document.getElementById('user').value = answer.owner.display_name || "N/A";
-            document.getElementById('screenshot').value = screenshotUrl;
-            document.getElementById('tag').value = tags || "N/A";
-            document.getElementById('upvotes').value = answer.score || "N/A";
-
+        function processAnswers(answers, post, sotwNumber) {
             const themeTitle = document.getElementById('theme-title').value.trim() || "There is no theme this week";
             const themeDescription = document.getElementById('theme-description').value.trim() || "There is no theme this week";
 
-            const closeDate = new Date();
-            closeDate.setDate(closeDate.getDate() + 7); // Add 7 days for submission period
-            const finishDate = new Date(closeDate);
-            finishDate.setDate(finishDate.getDate() + 7); // Add 7 days for voting period
+            // Call hoisted core function to generate template
+            const result = processAnswersCore(answers, post, sotwNumber, themeTitle, themeDescription);
+            const template = result.template;
+            const metadata = result.metadata;
 
-            const closeDateString = closeDate.toLocaleDateString("en-US", { year: 'numeric', month: 'long', day: 'numeric' });
-            const finishDateString = finishDate.toLocaleDateString("en-US", { year: 'numeric', month: 'long', day: 'numeric' });
+            // Parse first answer for screenshot and tags
+            const parser = new DOMParser();
+            const doc = parser.parseFromString(answers[0].body, "text/html");
+            const tags = Array.from(doc.querySelectorAll("a.post-tag")).map(tag => tag.textContent).join(", ");
 
-            const sotwNumberWithPostfix = (number) => {
-                const suffixes = ["th", "st", "nd", "rd"];
-                const value = number % 100;
-                return number + (suffixes[(value - 20) % 10] || suffixes[value] || suffixes[0]);
-            };
+            // Update DOM with results
+            const tiedCount = metadata.tiedCount;
+            document.getElementById('winning-id').value = answers[0].answer_id || "N/A";
+            document.getElementById('user').value = answers[0].owner.display_name || "N/A";
+            document.getElementById('screenshot').value = metadata.screenshotUrl;
+            document.getElementById('tag').value = tags || "N/A";
+            document.getElementById('upvotes').value = metadata.upvoteCount + (tiedCount > 1 ? ` (${tiedCount}-way tie)` : "") || "N/A";
 
-            const nextSotwNumber = parseInt(sotwNumber, 10) + 1;
-            const nextSotwNumberWithPostfix = sotwNumberWithPostfix(nextSotwNumber);
+            // Set screenshot as page background
+            if (metadata.screenshotUrl && metadata.screenshotUrl !== "N/A") {
+                document.body.style.backgroundImage = `url('${metadata.screenshotUrl}')`;
+            }
 
-            const template = `<!-- # This contest is over.
-
-*[previous contest][contest prev] | [next contest][contest next]* -->
-
-Hello and welcome to the **${nextSotwNumberWithPostfix}** edition of the Screenshot of the Week!
-
-To start with, congratulations to the winner of the previous contest! [${answer.owner.display_name}][winning post]'s screenshot from [tag:${tags}] won with ${answer.score} upvotes!
-
-[![Last week's winning screenshot one][winning screenshot]][winning screenshot]
-
----
-
-To submit a screenshot, simply post it as an answer to this question, but please take note of the following:
-
-- One screenshot per post, and one post per person, please!
-- Limited picture modifications are allowed, such as cropping, simple filters, and blurring of identifying info such as names, but not adding other images or text.
-- To ensure a fair playing field, please post screenshots you've taken yourself rather than ones you found online.
-- Stack Exchange’s [Code of Conduct][code of conduct] still applies - so if it would be unacceptable to post normally, it’s unacceptable here.
-
-Also, try to avoid pictures that include spoilers. We want everyone to be able to enjoy this contest, so the less spoilers the better.
-
-### How long will the contest run?
-We will accept submissions for a week, until ${closeDateString}, then have a second week-long period where only voting will be accepted. This is to give every submission, even those posted at the end of the first week, a chance to be voted on by everyone.
-
-After the end of the second week, at ${finishDateString}, we will count upvotes only to determine the winning screenshot, which will be featured for a week on the main site's photo widget.
-
-------------------------
-
-# **This week's theme:** ${themeTitle}
-
-${themeDescription}
-
-As a reminder, we're always accepting suggestions for themed weeks, and have compiled that suggestion process into a [question of its own][themes collection]. Additionally, there is the [hall of fame][hall of fame] you can check out that contains all the previous contest winners.
-
-  [contest prev]:       //meta.arqade.com/q/${post.question_id}
-  [contest next]:       //meta.arqade.com/q/17226
-
-  [winning post]:       https://gaming.meta.stackexchange.com/a/${answer.answer_id}
-  [winning screenshot]: ${screenshotUrl}
-
-  [code of conduct]:   //arqade.com/conduct
-  [themes collection]: //meta.arqade.com/q/15029
-  [hall of fame]:      //meta.arqade.com/q/14939`;
-
-            document.getElementById('results').value = template.trim();
+            // Display template in results
+            document.getElementById('results').value = template;
+            
+            // Store the post ID in sessionStorage for hall of fame form
+            const postId = post.question_id;
+            sessionStorage.setItem('winning_post_id', postId);
+            
+            // Show notification with link to hall of fame form
+            showNotificationWithLink(`Post generated! <a href="#" id="hof-link" style="color: white; text-decoration: underline;">Consider updating the hall of fame</a>.`);
         }
     } catch (error) {
         console.error("Error fetching data from Stack Exchange API:", error);
@@ -167,6 +190,37 @@ function showNotification(message) {
     setTimeout(() => {
         document.body.removeChild(notification);
     }, 3000);
+}
+
+function showNotificationWithLink(htmlContent) {
+    const notification = document.createElement('div');
+    notification.innerHTML = htmlContent;
+    notification.style.position = 'fixed';
+    notification.style.bottom = '10px';
+    notification.style.right = '10px';
+    notification.style.backgroundColor = '#4caf50';
+    notification.style.color = 'white';
+    notification.style.padding = '10px';
+    notification.style.borderRadius = '5px';
+    notification.style.boxShadow = '0 2px 4px rgba(0, 0, 0, 0.2)';
+    notification.style.zIndex = '10000';
+    document.body.appendChild(notification);
+    
+    // Attach click handler to the link
+    const hofLink = notification.querySelector('#hof-link');
+    if (hofLink) {
+        hofLink.addEventListener('click', (e) => {
+            e.preventDefault();
+            // Switch to hall of fame tab
+            const hofTabButton = document.querySelector('[data-tab="hof-tab"]');
+            hofTabButton.click();
+            // Auto-populate the post ID
+            const postId = sessionStorage.getItem('winning_post_id');
+            if (postId) {
+                document.getElementById('hof-post-id').value = postId;
+            }
+        });
+    }
 }
 
 
