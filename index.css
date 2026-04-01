@@ -77,6 +77,41 @@ img {
     pointer-events: none; /* Prevent interaction with the popup image */
 }
 
+#tab-buttons {
+    display: flex;
+    border-bottom: 2px solid #555555;
+    margin-bottom: 20px;
+    max-width: 640px;
+    margin-left: auto;
+    margin-right: auto;
+}
+
+.tab-button {
+    padding: 10px 20px;
+    background-color: #2a2a2a;
+    color: #e0e0e0;
+    border: 1px solid #555555;
+    border-bottom: none;
+    border-radius: 5px 5px 0 0;
+    cursor: pointer;
+    font-size: 16px;
+    width: auto;
+    margin-right: 4px;
+    transition: background-color 0.2s;
+}
+
+.tab-button:hover {
+    background-color: #3a3a3a;
+}
+
+.tab-button.active {
+    background-color: #1e1e1e;
+    color: #ffffff;
+    border-color: #555555;
+    margin-bottom: -2px;
+    border-bottom: 2px solid #1e1e1e;
+}
+
 #more-info-container {
     margin-top: 10px;
 }
