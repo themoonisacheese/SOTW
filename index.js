@@ -11,13 +11,11 @@ document.querySelectorAll('.tab-button').forEach(button => {
         // Remove active class from all buttons
         document.querySelectorAll('.tab-button').forEach(btn => {
             btn.classList.remove('active');
-            btn.style.borderBottom = 'none';
         });
         
         // Show selected tab
         document.getElementById(tabName).style.display = 'block';
         button.classList.add('active');
-        button.style.borderBottom = '3px solid #007bff';
     });
 });
 
