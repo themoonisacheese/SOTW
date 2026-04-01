@@ -753,6 +753,67 @@ function generateWinnerEntry(winnerData) {
 }
 
 /**
+ * Format a number as an ordinal string (1st, 2nd, 3rd, 4th, ...)
+ */
+function formatOrdinal(n) {
+    const s = ["th", "st", "nd", "rd"];
+    const v = n % 100;
+    return n + (s[(v - 20) % 10] || s[v] || s[0]);
+}
+
+const MONTH_NAMES = ["January", "February", "March", "April", "May", "June",
+                     "July", "August", "September", "October", "November", "December"];
+
+/**
+ * Format start/end Dates as a HOF-style date range string
+ */
+function formatDateRange(startDate, endDate) {
+    const startDay = startDate.getDate();
+    const startMonth = MONTH_NAMES[startDate.getMonth()];
+    const endDay = endDate.getDate();
+    const endMonth = MONTH_NAMES[endDate.getMonth()];
+    const endYear = endDate.getFullYear();
+
+    if (startDate.getMonth() === endDate.getMonth() && startDate.getFullYear() === endDate.getFullYear()) {
+        return `${formatOrdinal(startDay)}\u2013${formatOrdinal(endDay)} of ${endMonth}, ${endYear}`;
+    } else {
+        return `${formatOrdinal(startDay)} of ${startMonth} \u2013 ${formatOrdinal(endDay)} of ${endMonth}, ${endYear}`;
+    }
+}
+
+/**
+ * Parse the start date from a HOF-style date range string
+ * Handles both "6th\u201320th of October, 2025" and "22nd of September \u2013 6th of October, 2025"
+ */
+function parseContestStartDate(dateRange) {
+    if (!dateRange) return null;
+
+    // Format 1: cross-month "22nd of September \u2013 6th of October, 2025"
+    const crossMonth = dateRange.match(/(\d+)(?:st|nd|rd|th)\s+of\s+(\w+)\s*[\u2013-]/i);
+    if (crossMonth) {
+        const day = parseInt(crossMonth[1], 10);
+        const month = crossMonth[2];
+        // Year is at the end of the string
+        const yearMatch = dateRange.match(/(\d{4})/);
+        const year = yearMatch ? parseInt(yearMatch[1], 10) : new Date().getFullYear();
+        const d = new Date(`${month} ${day}, ${year}`);
+        if (!isNaN(d)) return d;
+    }
+
+    // Format 2: same-month "6th\u201320th of October, 2025"
+    const sameMonth = dateRange.match(/(\d+)(?:st|nd|rd|th)[\u2013-](\d+)(?:st|nd|rd|th)\s+of\s+(\w+),?\s*(\d{4})/i);
+    if (sameMonth) {
+        const day = parseInt(sameMonth[1], 10);
+        const month = sameMonth[3];
+        const year = parseInt(sameMonth[4], 10);
+        const d = new Date(`${month} ${day}, ${year}`);
+        if (!isNaN(d)) return d;
+    }
+
+    return null;
+}
+
+/**
  * Assemble complete Hall of Fame post
  * Combines existing entries with new entries
  */
@@ -830,6 +891,23 @@ function assembleHallOfFamePage(existingEntries, newWinnerDataList, browsingLink
     });
     
     allEntries.sort((a, b) => a.contestNum - b.contestNum);
+    
+    // Fill in missing date ranges using a known anchor entry (2-week cadence)
+    const anchorEntry = allEntries.slice().reverse().find(e => e.dateRange && parseContestStartDate(e.dateRange));
+    if (anchorEntry) {
+        const anchorDate = parseContestStartDate(anchorEntry.dateRange);
+        allEntries.forEach(entry => {
+            if (!entry.dateRange) {
+                const offset = (entry.contestNum - anchorEntry.contestNum) * 14;
+                const startDate = new Date(anchorDate);
+                startDate.setDate(startDate.getDate() + offset);
+                const endDate = new Date(startDate);
+                endDate.setDate(endDate.getDate() + 14);
+                entry.dateRange = formatDateRange(startDate, endDate);
+                console.log(`Computed date for contest #${entry.contestNum}: ${entry.dateRange}`);
+            }
+        });
+    }
     
     allEntries.forEach(entry => {
         const gameTagsMarkdown = entry.gameTags.map(tag => `[tag:${tag}]`).join(' ');

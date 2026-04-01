@@ -23,21 +23,22 @@ document.querySelectorAll('.tab-button').forEach(button => {
 
 /**
  * API throttle management for Stack Exchange API compliance
+ * Backoff is global — the SE API requires waiting before ANY subsequent request
  */
-const apiThrottles = {};
+let apiBackoffUntil = 0;
 
-async function waitForBackoff(endpoint) {
-    if (apiThrottles[endpoint] && apiThrottles[endpoint] > Date.now()) {
-        const waitTime = Math.ceil((apiThrottles[endpoint] - Date.now()) / 1000);
-        console.log(`API throttle: waiting ${waitTime}s for ${endpoint}`);
-        await new Promise(resolve => setTimeout(resolve, (apiThrottles[endpoint] - Date.now()) + 100));
+async function waitForBackoff() {
+    if (apiBackoffUntil > Date.now()) {
+        const waitTime = Math.ceil((apiBackoffUntil - Date.now()) / 1000);
+        console.log(`API throttle: waiting ${waitTime}s (global backoff)`);
+        await new Promise(resolve => setTimeout(resolve, (apiBackoffUntil - Date.now()) + 100));
     }
 }
 
-function recordBackoff(endpoint, backoffSeconds) {
+function recordBackoff(backoffSeconds) {
     if (backoffSeconds && backoffSeconds > 0) {
-        apiThrottles[endpoint] = Date.now() + (backoffSeconds * 1000);
-        console.log(`API backoff recorded for ${endpoint}: ${backoffSeconds}s`);
+        apiBackoffUntil = Date.now() + (backoffSeconds * 1000);
+        console.log(`API global backoff recorded: ${backoffSeconds}s`);
     }
 }
 
@@ -45,16 +46,34 @@ function recordBackoff(endpoint, backoffSeconds) {
  * Fetch with backoff handling
  */
 async function fetchWithBackoff(url, endpoint) {
-    // Wait for any existing throttle
-    await waitForBackoff(endpoint);
+    // Wait for any global backoff
+    await waitForBackoff();
     
     try {
         const response = await fetch(url);
         const data = await response.json();
         
+        // SE API returns errors as JSON with error_id even on 400/429 status codes
+        if (data.error_id) {
+            if (data.error_id === 502) {
+                // Throttle violation — back off and retry once
+                console.warn(`Rate limited (502). Backing off 10s before retry...`);
+                recordBackoff(10);
+                await waitForBackoff();
+                const retryResponse = await fetch(url);
+                const retryData = await retryResponse.json();
+                if (retryData.error_id) {
+                    throw new Error(`SE API error ${retryData.error_id}: ${retryData.error_message}`);
+                }
+                if (retryData.backoff) recordBackoff(retryData.backoff);
+                return retryData;
+            }
+            throw new Error(`SE API error ${data.error_id} (${data.error_name}): ${data.error_message}`);
+        }
+        
         // Record backoff if present
         if (data.backoff) {
-            recordBackoff(endpoint, data.backoff);
+            recordBackoff(data.backoff);
         }
         
         return data;

@@ -24,10 +24,15 @@ document.getElementById('hof-generate').addEventListener('click', async () => {
         
         // Step 1: Fetch the announced post to get its contest number
         const postApiUrl = `https://api.stackexchange.com/2.3/questions/${postIdInput}?site=gaming.meta.stackexchange.com&filter=withbody`;
-        const postData = await fetchWithBackoff(postApiUrl, 'questions');
+        let postData;
+        try {
+            postData = await fetchWithBackoff(postApiUrl, 'questions');
+        } catch (e) {
+            throw new Error(`API request failed for post ${postIdInput}. This post may not exist on gaming.meta.stackexchange.com, or you may have entered the wrong ID. (${e.message})`);
+        }
         
         if (!postData.items || postData.items.length === 0) {
-            throw new Error("Could not fetch post. Check the Post ID.");
+            throw new Error(`Post ${postIdInput} not found on gaming.meta.stackexchange.com. Make sure you're entering the ID of the new SOTW announcement post (e.g. the post for #164 which announces the winner of #163).`);
         }
         
         const announcedPost = postData.items[0];
