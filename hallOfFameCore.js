@@ -112,7 +112,7 @@ function extractBrowsingLinks(htmlContent) {
                 browsingLinks[rangeKey] = {
                     start: startNum,
                     end: endNum,
-                    url: href,
+                    url: href.replace(/^https?:/, ''), // Strip https: for protocol-relative URL
                     label: `#${startNum}–#${endNum}`
                 };
                 
@@ -156,17 +156,28 @@ function parseHallOfFameEntries(htmlContent) {
             if (contestMatch) {
                 matchCount++;
                 const contestNum = parseInt(contestMatch[1], 10);
+                
+                // Skip template entries (have ": …" suffix after contest number)
+                const link = h3.querySelector("a");
+                const linkText = link ? link.textContent : h3.textContent;
+                if (linkText.includes(': …') || linkText.includes('...')) {
+                    console.log(`Skipping template entry #${contestNum}`);
+                    return;
+                }
+                
                 console.log(`Match #${matchCount}: Found Contest #${contestNum} in h3 #${index}`);
                 
-                // Extract post ID from the link href: //meta.arqade.com/q/17647/...
+                // Extract post ID and full contest link from the <a> href
                 let postId = 0;
-                const link = h3.querySelector("a");
+                let contestLink = "";
                 if (link && link.href) {
                     const postIdMatch = link.href.match(/\/q\/(\d+)/);
                     if (postIdMatch) {
                         postId = parseInt(postIdMatch[1], 10);
                         console.log(`  Post ID: ${postId}`);
                     }
+                    // Store the full link from the API response, strip protocol for protocol-relative URLs
+                    contestLink = link.href.replace(/^https?:/, '');
                 }
                 
                 // Get all content after this h3 until the next h3
@@ -180,7 +191,8 @@ function parseHallOfFameEntries(htmlContent) {
                 
                 const entry = parseHallOfFameEntry(contestNum, contentHtml);
                 if (entry) {
-                    entry.postId = postId; // Add the extracted post ID
+                    entry.postId = postId;
+                    entry.contestLink = contestLink;
                     entries.push(entry);
                 }
             }
@@ -214,7 +226,8 @@ function parseHallOfFameEntry(contestNum, htmlContent) {
         screenshotAlt: "",
         caption: "",
         dateRange: "",
-        postId: 0
+        postId: 0,
+        userLink: ""
     };
     
     try {
@@ -252,6 +265,7 @@ function parseHallOfFameEntry(contestNum, htmlContent) {
                         
                         // Extract user ID from href: //arqade.com/users/5357/neon1024?tab=profile
                         const href = elem.href || elem.getAttribute('href') || '';
+                        entry.userLink = href.replace(/^https?:/, '');
                         const userIdMatch = href.match(/\/users\/(\d+)/);
                         if (userIdMatch) {
                             entry.winnerId = parseInt(userIdMatch[1], 10);
@@ -696,8 +710,21 @@ async function extractWinnerFromPost(post, contestNum) {
         }
         
         console.log(`Caption for contest #${contestNum}: "${caption}"`);
+        
+        // Build the contest link in HOF format: //meta.arqade.com/q/ID/slug
+        // SE API gives links like https://gaming.meta.stackexchange.com/questions/ID/slug
+        // HOF uses //meta.arqade.com/q/ID/slug
+        let contestLink = `//meta.arqade.com/q/${post.question_id}`;
+        if (post.link) {
+            const slugMatch = post.link.match(/\/questions\/\d+\/(.+)/);
+            if (slugMatch) {
+                contestLink = `//meta.arqade.com/q/${post.question_id}/${slugMatch[1]}`;
+            }
+        }
+        
         return {
             contestNum: contestNum,
+            contestLink: contestLink,
             winner: winner,
             winnerHandle: winnerHandle,
             winnerId: winnerId,
@@ -815,64 +842,20 @@ function parseContestStartDate(dateRange) {
 
 /**
  * Assemble complete Hall of Fame post
- * Combines existing entries with new entries
+ * Combines existing entries with new entries, adds template section, and generates all references
+ * 
+ * @param {Array} existingEntries - Parsed entries from existing HOF answer
+ * @param {Array} newWinnerDataList - New winner data from fetchMissingContests
+ * @param {Object} browsingLinks - Existing browsing links from HOF answer
+ * @param {number} announcedContestNum - Contest number of the just-announced post
+ * @param {string} announcedPostLink - Full SE API link object of the announced post
+ * @param {number} announcedPostId - Question ID of the announced post
+ * @returns {string} Complete HOF markdown
  */
-function assembleHallOfFamePage(existingEntries, newWinnerDataList, browsingLinks = {}) {
+function assembleHallOfFamePage(existingEntries, newWinnerDataList, browsingLinks = {}, announcedContestNum = 0, announcedPostLink = '', announcedPostId = 0) {
     console.log(`Assembling HOF with ${existingEntries.length} existing entries and ${newWinnerDataList.length} new entries`);
     
-    // Determine range for the post header
-    const allContestNums = existingEntries.map(e => e.contestNum).concat(newWinnerDataList.map(w => w.contestNum));
-    console.log(`All contest numbers: ${allContestNums.sort((a,b) => a-b).join(', ')}`);
-    
-    const minContestNum = Math.min(...allContestNums);
-    const maxContestNum = Math.max(...allContestNums);
-    
-    // Find range boundaries (25-entry chunks)
-    const rangeStart = Math.floor((minContestNum - 1) / 25) * 25 + 1;
-    const rangeEnd = Math.ceil((maxContestNum) / 25) * 25;
-    const currentRangeKey = `${rangeStart}-${rangeEnd}`;
-    
-    // Build browsing links: keep existing ones and add current range if needed
-    const allBrowsingLinks = {};
-    
-    // Add all existing browsing links
-    Object.keys(browsingLinks).forEach(key => {
-        allBrowsingLinks[key] = browsingLinks[key];
-    });
-    
-    // Add current range if not already present
-    if (!allBrowsingLinks[currentRangeKey]) {
-        allBrowsingLinks[currentRangeKey] = {
-            start: rangeStart,
-            end: rangeEnd,
-            url: null, // Will be filled in when answer is posted
-            label: `#${rangeStart}–#${rangeEnd}`
-        };
-    }
-    
-    // Generate range links sorted by start number
-    let rangeLinks = "";
-    const sortedRanges = Object.values(allBrowsingLinks).sort((a, b) => a.start - b.start);
-    
-    for (let range of sortedRanges) {
-        if (range.url) {
-            // Has a URL, create a link
-            rangeLinks += `**→ [${range.label}][${range.start}-${range.end}]**`;
-        } else {
-            // No URL yet (current range being generated), show as text
-            rangeLinks += `**→ ${range.label}**`;
-        }
-        
-        if (range.start === rangeStart) {
-            rangeLinks += ` (You are here)`;
-        }
-        rangeLinks += `\n`;
-    }
-    
-    // Assemble entry markdown
-    let entriesMarkdown = "";
-    
-    // Sort all entries by contest number
+    // Merge and sort all real entries
     const allEntries = [...existingEntries];
     newWinnerDataList.forEach(winnerData => {
         allEntries.push({
@@ -886,92 +869,219 @@ function assembleHallOfFamePage(existingEntries, newWinnerDataList, browsingLink
             screenshotAlt: winnerData.screenshotAlt,
             caption: winnerData.caption,
             dateRange: winnerData.dateRange,
-            postId: winnerData.postId
+            postId: winnerData.postId,
+            contestLink: winnerData.contestLink || `//meta.arqade.com/q/${winnerData.postId}`
         });
     });
     
     allEntries.sort((a, b) => a.contestNum - b.contestNum);
+    const allContestNums = allEntries.map(e => e.contestNum);
+    console.log(`All contest numbers: ${allContestNums.join(', ')}`);
     
-    // Fill in missing date ranges using a known anchor entry (2-week cadence)
+    const minContestNum = allContestNums.length > 0 ? Math.min(...allContestNums) : announcedContestNum;
+    const maxContestNum = allContestNums.length > 0 ? Math.max(...allContestNums) : announcedContestNum;
+    
+    // Find range boundaries (25-entry chunks)
+    const rangeStart = Math.floor((minContestNum - 1) / 25) * 25 + 1;
+    const rangeEnd = Math.ceil(maxContestNum / 25) * 25;
+    const currentRangeKey = `${rangeStart}-${rangeEnd}`;
+    
+    // Fill in missing date ranges for real entries using anchor entry
     const anchorEntry = allEntries.slice().reverse().find(e => e.dateRange && parseContestStartDate(e.dateRange));
+    let anchorDate = null;
+    let anchorContestNum = 0;
     if (anchorEntry) {
-        const anchorDate = parseContestStartDate(anchorEntry.dateRange);
+        anchorDate = parseContestStartDate(anchorEntry.dateRange);
+        anchorContestNum = anchorEntry.contestNum;
         allEntries.forEach(entry => {
             if (!entry.dateRange) {
-                const offset = (entry.contestNum - anchorEntry.contestNum) * 14;
+                const offset = (entry.contestNum - anchorContestNum) * 14;
                 const startDate = new Date(anchorDate);
                 startDate.setDate(startDate.getDate() + offset);
                 const endDate = new Date(startDate);
                 endDate.setDate(endDate.getDate() + 14);
                 entry.dateRange = formatDateRange(startDate, endDate);
-                console.log(`Computed date for contest #${entry.contestNum}: ${entry.dateRange}`);
             }
         });
     }
     
-    allEntries.forEach(entry => {
-        const gameTagsMarkdown = entry.gameTags.map(tag => `[tag:${tag}]`).join(' ');
-        const winnerHandleForLink = entry.winnerHandle || entry.winner.toLowerCase().replace(/\s+/g, '-');
-        
-        entriesMarkdown += `### [Contest #${entry.contestNum}][${entry.contestNum}-contest]\n`;
-        
-        if (entry.dateRange) {
-            entriesMarkdown += `**Date:** ${entry.dateRange}\n`;
-        }
-        
-        entriesMarkdown += `**Winner:** [${entry.winner}][${winnerHandleForLink}] | **Game:** ${gameTagsMarkdown} | **Upvotes:** *${entry.upvotes}*\n`;
-        
-        if (entry.screenshotUrl && entry.screenshotUrl !== "N/A") {
-            const altText = entry.screenshotAlt || `Contest #${entry.contestNum} winning screenshot`;
-            entriesMarkdown += `[![${altText}][${entry.contestNum}-img]][${entry.contestNum}-img]\n`;
-            
-            if (entry.caption) {
-                entriesMarkdown += `*${entry.caption}*\n`;
-            }
-        }
-        
-        entriesMarkdown += `\n---\n\n`;
+    // Build browsing links
+    const allBrowsingLinks = {};
+    Object.keys(browsingLinks).forEach(key => {
+        allBrowsingLinks[key] = browsingLinks[key];
     });
+    if (!allBrowsingLinks[currentRangeKey]) {
+        allBrowsingLinks[currentRangeKey] = {
+            start: rangeStart,
+            end: rangeEnd,
+            url: null,
+            label: `#${rangeStart} – #${rangeEnd}`
+        };
+    }
     
-    // Generate reference links
-    let contestReferences = "";
-    let imageReferences = "";
-    let userReferences = new Set();
+    // Helper: range label with spaced en-dashes
+    const rangeLabel = (s, e) => `#${s} – #${e}`;
     
-    allEntries.forEach(entry => {
-        if (entry.postId) {
-            contestReferences += `  [${entry.contestNum}-contest]:       //meta.arqade.com/q/${entry.postId}\n`;
-        }
-        
-        if (entry.screenshotUrl && entry.screenshotUrl !== "N/A") {
-            imageReferences += `  [${entry.contestNum}-img]:           ${entry.screenshotUrl}\n`;
-        }
-        
-        const winnerHandleForLink = entry.winnerHandle || entry.winner.toLowerCase().replace(/\s+/g, '-');
-        // Use winnerId for user link if available, otherwise use placeholder
-        if (entry.winnerId) {
-            userReferences.add(`  [${winnerHandleForLink}]:       //arqade.com/users/${entry.winnerId}/${winnerHandleForLink}`);
-        } else {
-            userReferences.add(`  [${winnerHandleForLink}]:       //arqade.com/users/0`);
-        }
-    });
-    
-    const userReferencesStr = Array.from(userReferences).join('\n');
-    
-    // Build browsing link references for markdown
-    let browsingLinkReferences = "";
-    const allSortedRanges = Object.values(allBrowsingLinks).sort((a, b) => a.start - b.start);
-    for (let range of allSortedRanges) {
+    // Generate header range links
+    const sortedRanges = Object.values(allBrowsingLinks).sort((a, b) => a.start - b.start);
+    let rangeLinks = "";
+    for (let range of sortedRanges) {
+        const label = rangeLabel(range.start, range.end);
         if (range.url) {
-            browsingLinkReferences += `  [${range.start}-${range.end}]:       ${range.url}\n`;
+            rangeLinks += `**→ [${label}][${range.start}-${range.end}]**  \n`;
+        } else if (range.start === rangeStart) {
+            rangeLinks += `**→ ${label}** (You are here)  \n`;
+        } else {
+            rangeLinks += `**→ ${label}**  \n`;
         }
     }
     
-    // Assemble final markdown - keep reference sections intact
-    const header = `## Screenshot of the Week Winners #${rangeStart}–#${rangeEnd}\n\n${rangeLinks}\n\n---\n\n`;
-    const referenceSection = `\n<!-- BROWSING LINKS -->\n\n${browsingLinkReferences}\n<!-- CONTESTS -->\n\n${contestReferences}\n\n<!-- SCREENSHOTS -->\n\n${imageReferences}\n\n<!-- USERS -->\n\n${userReferencesStr}`;
+    // ---- Generate entry markdown ----
+    let entriesMarkdown = "";
     
-    const fullMarkdown = header + entriesMarkdown + referenceSection;
+    // Real entries — place separator between entries
+    allEntries.forEach((entry, index) => {
+        entriesMarkdown += `### [Contest #${entry.contestNum}][${entry.contestNum}-contest]\n`;
+        if (entry.dateRange) {
+            entriesMarkdown += `**Date:** ${entry.dateRange}  \n`;
+        }
+        const gameTagsMarkdown = entry.gameTags.map(tag => `[tag:${tag}]`).join(' ');
+        const winnerHandleForLink = entry.winnerHandle || entry.winner.toLowerCase().replace(/\s+/g, '-');
+        entriesMarkdown += `**Winner:** [${entry.winner}][${winnerHandleForLink}] | **Game:** ${gameTagsMarkdown} | **Upvotes:** *${entry.upvotes}*  \n`;
+        if (entry.screenshotUrl && entry.screenshotUrl !== "N/A") {
+            const altText = entry.screenshotAlt || `Contest #${entry.contestNum} winning screenshot`;
+            entriesMarkdown += `[![${altText}][${entry.contestNum}-img]][${entry.contestNum}-img]\n`;
+            if (entry.caption) {
+                entriesMarkdown += `*${entry.caption}*  \n`;
+            }
+        }
+        
+        // Separator between entries (not after the last one)
+        if (index < allEntries.length - 1) {
+            entriesMarkdown += `\n---\n\n`;
+        }
+    });
     
-    return fullMarkdown;
+    // ---- Template entries ----
+    // Template starts at announcedContestNum (the post just announced, whose contest number
+    // is the NEXT contest to be run) and goes to rangeEnd
+    const templateStartNum = announcedContestNum;
+    const templateEndNum = rangeEnd;
+    let templateMarkdown = "";
+    
+    if (templateStartNum <= templateEndNum) {
+        templateMarkdown = `\n<!--- TEMPLATES START (move this line down)\n\n`;
+        
+        for (let num = templateStartNum; num <= templateEndNum; num++) {
+            // Compute date for template entry
+            let templateDate = `…`;
+            if (anchorDate && anchorContestNum) {
+                const offset = (num - anchorContestNum) * 14;
+                const startDate = new Date(anchorDate);
+                startDate.setDate(startDate.getDate() + offset);
+                const endDate = new Date(startDate);
+                endDate.setDate(endDate.getDate() + 14);
+                templateDate = formatDateRange(startDate, endDate);
+            }
+            
+            templateMarkdown += `---\n\n### [Contest #${num}: \u2026][${num}-contest]\n`;
+            templateMarkdown += `**Date:** ${templateDate}  \n`;
+            templateMarkdown += `**Winner:** [\u2026] | **Game:** [tag:\u2026] | **Upvotes:** *\u2026*  \n`;
+            templateMarkdown += `[![\u2026][${num}-img]][${num}-img]  \n`;
+            templateMarkdown += `*\u2026*  \n\n`;
+        }
+        
+        templateMarkdown += `TEMPLATES END --->`;
+    }
+    
+    // ---- Jump to section ----
+    let jumpToSection = `\n\n---\n\n**Jump to:**\n\n`;
+    for (let range of sortedRanges) {
+        const label = rangeLabel(range.start, range.end);
+        if (range.url) {
+            jumpToSection += `**→ [${label}][${range.start}-${range.end}]**  \n`;
+        } else if (range.start === rangeStart) {
+            jumpToSection += `**→ ${label}** (You are here)  \n`;
+        } else {
+            jumpToSection += `**→ ${label}**  \n`;
+        }
+    }
+    
+    // ---- Generate references ----
+    let hofPostReferences = "";
+    let userReferences = new Map();
+    let contestReferences = "";
+    let imageReferences = "";
+    let templateUserReferenceCount = 0;
+    
+    // Build a set of all contest numbers (real entries + template range), sorted
+    const allRefNums = new Set(allEntries.map(e => e.contestNum));
+    if (templateStartNum <= templateEndNum) {
+        for (let num = templateStartNum; num <= templateEndNum; num++) {
+            allRefNums.add(num);
+        }
+    }
+    const sortedRefNums = Array.from(allRefNums).sort((a, b) => a - b);
+    
+    // Lookup map for real entry data
+    const entryByNum = {};
+    allEntries.forEach(e => { entryByNum[e.contestNum] = e; });
+    
+    // Generate contest and image references in sorted order (real + template interleaved)
+    sortedRefNums.forEach(num => {
+        const entry = entryByNum[num];
+        if (entry && entry.contestLink) {
+            contestReferences += `  [${num}-contest]: ${entry.contestLink.replace(/^https?:/, '')}\n`;
+        } else if (entry && entry.postId) {
+            contestReferences += `  [${num}-contest]: //meta.arqade.com/q/${entry.postId}\n`;
+        } else if (num === announcedContestNum && announcedPostLink) {
+            const slugMatch = announcedPostLink.match(/\/questions\/\d+\/(.+)/);
+            if (slugMatch) {
+                contestReferences += `  [${num}-contest]: //meta.arqade.com/q/${announcedPostId}/${slugMatch[1]}\n`;
+            } else {
+                contestReferences += `  [${num}-contest]: //meta.arqade.com/q/${announcedPostId}\n`;
+            }
+        } else {
+            contestReferences += `  [${num}-contest]: //meta.arqade.com/q/\u2026\n`;
+        }
+        
+        if (entry && entry.screenshotUrl && entry.screenshotUrl !== "N/A") {
+            imageReferences += `  [${num}-img]: ${entry.screenshotUrl}\n`;
+        } else {
+            imageReferences += `  [${num}-img]: https://i.sstatic.net/\u2026\n`;
+            templateUserReferenceCount++;
+        }
+    });
+    
+    // Build user references from real entries
+    allEntries.forEach(entry => {
+        const handle = entry.winnerHandle || entry.winner.toLowerCase().replace(/\s+/g, '-');
+        const url = entry.userLink || (entry.winnerId ? `//arqade.com/users/${entry.winnerId}/${handle}?tab=profile` : `//arqade.com/users/\u2026`);
+        if (!userReferences.has(handle)) {
+            userReferences.set(handle, `  [${handle}]: ${url}`);
+        }
+    });
+    
+    // Build user references string (real + template placeholders)
+    let userReferencesStr = Array.from(userReferences.values()).join('\n');
+    if (templateUserReferenceCount > 0) {
+        userReferencesStr += '\n';
+        for (let i = 0; i < templateUserReferenceCount; i++) {
+            userReferencesStr += '  [\u2026]: //arqade.com/users/\u2026\n';
+        }
+    }
+    
+    // Add browsing link references
+    for (let range of sortedRanges) {
+        if (range.url) {
+            hofPostReferences += `  [${range.start}-${range.end}]: ${range.url}\n`;
+        }
+    }
+    
+    // ---- Assemble final markdown ----
+    const header = `## Screenshot of the Week Winners #${rangeStart} – #${rangeEnd}\n\n${rangeLinks}\n\n---\n\n`;
+    
+    const referencesSection = `\n\n<!-- HALL OF FAME POSTS -->\n\n${hofPostReferences}\n<!-- USERS -->\n\n${userReferencesStr}\n<!-- CONTESTS -->\n\n${contestReferences}\n<!-- SCREENSHOTS -->\n\n${imageReferences}`;
+    
+    return header + entriesMarkdown + templateMarkdown + jumpToSection + referencesSection;
 }

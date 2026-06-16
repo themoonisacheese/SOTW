@@ -69,7 +69,9 @@ document.getElementById('hof-generate').addEventListener('click', async () => {
         document.getElementById('hof-results').value = `Found ${hofData.entries.length} existing entries\nFinding ${missingContests.length} missing contest(s)...\nAssembling hall of fame post...`;
         
         // Step 4: Assemble complete post
-        const markdown = assembleHallOfFamePage(hofData.entries, missingContests, hofData.browsingLinks);
+        const announcedPostLink = announcedPost.link || '';
+        const announcedQuestionId = parseInt(announcedPost.question_id, 10);
+        const markdown = assembleHallOfFamePage(hofData.entries, missingContests, hofData.browsingLinks, announcedContestNum, announcedPostLink, announcedQuestionId);
         
         document.getElementById('hof-results').value = markdown;
         
