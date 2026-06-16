@@ -157,10 +157,10 @@ function parseHallOfFameEntries(htmlContent) {
                 matchCount++;
                 const contestNum = parseInt(contestMatch[1], 10);
                 
-                // Skip template entries (have ": …" suffix after contest number)
+                // Skip template entries (have ": …" as the final suffix with no additional text)
                 const link = h3.querySelector("a");
                 const linkText = link ? link.textContent : h3.textContent;
-                if (linkText.includes(': …') || linkText.includes('...')) {
+                if (linkText.trim().match(/: \u2026$/) || linkText.trim().match(/#\d+: \u2026$/)) {
                     console.log(`Skipping template entry #${contestNum}`);
                     return;
                 }
@@ -244,7 +244,7 @@ function parseHallOfFameEntry(contestNum, htmlContent) {
             const text = p.textContent;
             
             if (!dateFound && text.includes("Date:")) {
-                const dateMatch = text.match(/Date:\s*([^|]+?)(?:\||$)/);
+                const dateMatch = text.match(/Date:\s*([^|\n]+?)(?=\||\n|$)/);
                 if (dateMatch) {
                     entry.dateRange = dateMatch[1].trim();
                     dateFound = true;
