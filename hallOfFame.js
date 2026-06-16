@@ -61,12 +61,11 @@ document.getElementById('hof-generate').addEventListener('click', async () => {
         // Step 3: Fetch missing contests
         const missingContests = await fetchMissingContests(lastContestNum, announcedContestNum);
         
-        if (missingContests.length === 0) {
-            document.getElementById('hof-results').value = "No missing contests to add.";
-            return;
-        }
-        
-        document.getElementById('hof-results').value = `Found ${hofData.entries.length} existing entries\nFinding ${missingContests.length} missing contest(s)...\nAssembling hall of fame post...`;
+        // We still assemble the page even if no missing contests — the template section
+        // and "Jump to:" links are always needed
+        document.getElementById('hof-results').value = `Found ${hofData.entries.length} existing entries` +
+            (missingContests.length > 0 ? `\nFound ${missingContests.length} missing contest(s)` : '') +
+            `\nAssembling hall of fame post...`;
         
         // Step 4: Assemble complete post
         const announcedPostLink = announcedPost.link || '';

@@ -370,11 +370,13 @@ async function fetchMissingContests(lastContestNum, announcedContestNum) {
     const missingContests = [];
     
     // We need to fill in contests from (lastContestNum + 1) to (announcedContestNum - 1)
+    // When the range is empty (consecutive entries, firstMissing > lastMissing),
+    // there's nothing to extract — the contest is already in the HOF.
     const firstMissing = lastContestNum + 1;
     const lastMissing = announcedContestNum - 1;
     
     if (firstMissing > lastMissing) {
-        // No missing contests
+        // No contests to fetch — the HOF is already up to date through announcedContestNum - 1
         return missingContests;
     }
     
