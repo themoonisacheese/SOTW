@@ -149,8 +149,8 @@ document.getElementById('autofetch').addEventListener('click', async () => {
         }
 
         function processAnswers(answers, post, sotwNumber) {
-            const themeTitle = document.getElementById('theme-title').value.trim() || "There is no theme this week";
-            const themeDescription = document.getElementById('theme-description').value.trim() || "There is no theme this week";
+            const themeTitle = document.getElementById('theme-title').value.trim() || "There is no theme this week.";
+            const themeDescription = document.getElementById('theme-description').value.trim() || "There is no theme this week.";
 
             // Call hoisted core function to generate template
             const result = processAnswersCore(answers, post, sotwNumber, themeTitle, themeDescription);
