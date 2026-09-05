@@ -9,32 +9,42 @@
  * @param {string} themeDescription - Theme description
  * @returns {Object} Result with template and metadata
  */
+function extractScreenshotUrl(body) {
+    if (typeof DOMParser !== 'undefined') {
+        // Browser environment
+        const parser = new DOMParser();
+        const doc = parser.parseFromString(body, "text/html");
+        const imgTag = doc.querySelector("img");
+        return imgTag ? imgTag.src : "N/A";
+    }
+    // Node.js environment - simple regex parsing
+    const imgMatch = body.match(/<img[^>]*\ssrc="([^"]+)"/);
+    return imgMatch ? imgMatch[1] : "N/A";
+}
+
 function processAnswersCore(answers, post, sotwNumber, themeTitle, themeDescription) {
     const tiedCount = answers.length;
     const upvoteCount = answers[0].score || 0;
-    
+
     // Calculate display duration per winner (dividing 14 days equally)
     const durationPerWinnerDays = 14 / tiedCount;
-    
-    // Parse first answer for screenshot and tags (used as reference)
+
+    // Parse every answer for its screenshot (each tied winner gets their own image)
+    const screenshotUrls = answers.map(answer => extractScreenshotUrl(answer.body));
+    const screenshotUrl = screenshotUrls[0];
+
+    // Parse first answer for tags (used as reference)
     // Handle both browser (DOMParser) and Node.js (mock) environments
-    let screenshotUrl = "N/A";
     let tags = "";
-    
+
     if (typeof DOMParser !== 'undefined') {
         // Browser environment
         const parser = new DOMParser();
         const doc = parser.parseFromString(answers[0].body, "text/html");
-        const imgTag = doc.querySelector("img");
-        screenshotUrl = imgTag ? imgTag.src : "N/A";
-
         const tagElements = doc.querySelectorAll("a.post-tag");
         tags = Array.from(tagElements).map(tag => tag.textContent).join(", ");
     } else {
         // Node.js environment - simple regex parsing
-        const imgMatch = answers[0].body.match(/src="([^"]+)"/);
-        screenshotUrl = imgMatch ? imgMatch[1] : "N/A";
-        
         const tagMatches = answers[0].body.matchAll(/<a class="post-tag"[^>]*>([^<]+)<\/a>/g);
         const tagList = [];
         for (const match of tagMatches) {
@@ -56,7 +66,8 @@ function processAnswersCore(answers, post, sotwNumber, themeTitle, themeDescript
     const tagMarkdown = tags.split(', ').map(tag => `[tag:${tag.trim()}]`).join(' ');
 
     // Calculate dates
-    const closeDate = new Date();
+    const contestStartDate = new Date();
+    const closeDate = new Date(contestStartDate);
     closeDate.setDate(closeDate.getDate() + 7);
     const finishDate = new Date(closeDate);
     finishDate.setDate(finishDate.getDate() + 7);
@@ -73,27 +84,42 @@ function processAnswersCore(answers, post, sotwNumber, themeTitle, themeDescript
         winnersSection = `To start with, congratulations to the winner of the previous contest! [${answers[0].owner.display_name}][winning post]'s screenshot from ${tagMarkdown} won with ${upvoteCount} upvotes!
 
 [![Last week's winning screenshot one][winning screenshot]][winning screenshot]`;
-        tieReferenceLinks = `  [winning post]:       https://gaming.meta.stackexchange.com/a/${answers[0].answer_id}`;
+        tieReferenceLinks = `  [winning post]:       https://gaming.meta.stackexchange.com/a/${answers[0].answer_id}\n  [winning screenshot]: ${screenshotUrl}`;
     } else {
         // Multiple tied winners
         winnersSection = `To start with, congratulations to the winners of the previous contest! This contest resulted in a ${tiedCount}-way tie with the following entries:
 
 `;
-        
+        const screenshotWords = ['one', 'two', 'three', 'four', 'five'];
+
         answers.forEach((answer, index) => {
-            const startDate = new Date(finishDate);
-            startDate.setDate(startDate.getDate() + Math.floor(index * durationPerWinnerDays));
-            const endDate = new Date(startDate);
-            endDate.setDate(endDate.getDate() + durationPerWinnerDays);
-            
+            // The previous contest's winners are featured during the NEW contest's
+            // two weeks, starting when this announcement is posted (contest start).
+            // Contiguous slots covering the full 14 days: rounding the shared
+            // boundaries keeps slots gap-free even when 14/tiedCount is fractional
+            const startDate = new Date(contestStartDate);
+            startDate.setDate(startDate.getDate() + Math.round(index * durationPerWinnerDays));
+            const endDate = new Date(contestStartDate);
+            endDate.setDate(endDate.getDate() + Math.round((index + 1) * durationPerWinnerDays));
+
             const startDateString = startDate.toLocaleDateString("en-US", { year: 'numeric', month: 'long', day: 'numeric' });
             const endDateString = endDate.toLocaleDateString("en-US", { year: 'numeric', month: 'long', day: 'numeric' });
-            
+
             winnersSection += `- [${answer.owner.display_name}][winner ${index + 1}]'s screenshot with ${upvoteCount} upvotes (featured ${startDateString}-${endDateString})\n`;
+
+            const winnerScreenshot = screenshotUrls[index];
+            if (winnerScreenshot && winnerScreenshot !== "N/A") {
+                winnersSection += `\n  [![Last week's winning screenshot ${screenshotWords[index] || index + 1}][winner ${index + 1} screenshot]][winner ${index + 1} screenshot]\n`;
+            }
+
             tieReferenceLinks += `  [winner ${index + 1}]:       https://gaming.meta.stackexchange.com/a/${answer.answer_id}\n`;
+            if (winnerScreenshot && winnerScreenshot !== "N/A") {
+                tieReferenceLinks += `  [winner ${index + 1} screenshot]: ${winnerScreenshot}\n`;
+            }
         });
-        
+
         winnersSection += `\n${tiedCount === 2 ? 'Both' : 'All ' + tiedCount} will be featured sequentially on the main site's photo widget.`;
+        tieReferenceLinks = tieReferenceLinks.trimEnd();
     }
 
     const template = `<!-- # This contest is over.
@@ -131,8 +157,6 @@ As a reminder, we're always accepting suggestions for themed weeks, and have com
   [contest prev]:       //meta.arqade.com/q/${post.question_id}
   [contest next]:       //meta.arqade.com/q/17226
 
-  [winning post]:       https://gaming.meta.stackexchange.com/a/${answers[0].answer_id}
-  [winning screenshot]: ${screenshotUrl}
 ${tieReferenceLinks}
   [code of conduct]:   //arqade.com/conduct
   [themes collection]: //meta.arqade.com/q/15029
@@ -147,6 +171,7 @@ ${tieReferenceLinks}
             closeDateString,
             finishDateString,
             screenshotUrl,
+            screenshotUrls,
             tags
         }
     };
