@@ -78,7 +78,7 @@ function processAnswersCore(answers, post, sotwNumber, themeTitle, themeDescript
     // Build winners section based on tie status
     let winnersSection = '';
     let tieReferenceLinks = '';
-    
+
     if (tiedCount === 1) {
         // Single winner
         winnersSection = `To start with, congratulations to the winner of the previous contest! [${answers[0].owner.display_name}][winning post]'s screenshot from ${tagMarkdown} won with ${upvoteCount} upvotes!
@@ -105,7 +105,7 @@ function processAnswersCore(answers, post, sotwNumber, themeTitle, themeDescript
             const startDateString = startDate.toLocaleDateString("en-US", { year: 'numeric', month: 'long', day: 'numeric' });
             const endDateString = endDate.toLocaleDateString("en-US", { year: 'numeric', month: 'long', day: 'numeric' });
 
-            winnersSection += `- [${answer.owner.display_name}][winner ${index + 1}]'s screenshot with ${upvoteCount} upvotes (featured ${startDateString}-${endDateString})\n`;
+            winnersSection += `- [${answer.owner.display_name}][winner ${index + 1}]'s screenshot from ${tagMarkdown} with ${upvoteCount} upvotes (featured ${startDateString}-${endDateString})\n`;
 
             const winnerScreenshot = screenshotUrls[index];
             if (winnerScreenshot && winnerScreenshot !== "N/A") {
