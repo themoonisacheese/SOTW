@@ -87,7 +87,7 @@ function processAnswersCore(answers, post, sotwNumber, themeTitle, themeDescript
         tieReferenceLinks = `  [winning post]:       https://gaming.meta.stackexchange.com/a/${answers[0].answer_id}\n  [winning screenshot]: ${screenshotUrl}`;
     } else {
         // Multiple tied winners
-        winnersSection = `To start with, congratulations to the winners of the previous contest! This contest resulted in a ${tiedCount}-way tie with the following entries:
+        winnersSection = `To start with, congratulations to the winners of the previous contest! The contest resulted in a ${tiedCount}-way tie with the following entries:
 
 `;
         const screenshotWords = ['one', 'two', 'three', 'four', 'five'];
@@ -152,7 +152,7 @@ After the end of the second week, at ${finishDateString}, we will count upvotes 
 
 ${themeDescription}
 
-As a reminder, we're always accepting suggestions for themed weeks, and have compiled that suggestion process into a [question of its own][themes collection]. Additionally, there is the [hall of fame][hall of fame] you can check out that contains all the previous contest winners.
+As a reminder, we're always accepting suggestions for themed weeks, and have compiled that suggestion process into a [question of its own][themes collection]. Additionally, there is the [Hall of Fame][hall of fame] you can check out that contains all the previous contest winners.
 
   [contest prev]:       //meta.arqade.com/q/${post.question_id}
   [contest next]:       //meta.arqade.com/q/17226
