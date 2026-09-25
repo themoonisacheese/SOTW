@@ -70,7 +70,7 @@ document.getElementById('hof-generate').addEventListener('click', async () => {
         // Step 4: Assemble complete post
         const announcedPostLink = announcedPost.link || '';
         const announcedQuestionId = parseInt(announcedPost.question_id, 10);
-        const markdown = assembleHallOfFamePage(hofData.entries, missingContests, hofData.browsingLinks, announcedContestNum, announcedPostLink, announcedQuestionId);
+        const markdown = assembleHallOfFamePage(hofData.entries, missingContests, hofData.browsingLinks, announcedContestNum, announcedPostLink, announcedQuestionId, hofData.hofAnswerId);
         
         document.getElementById('hof-results').value = markdown;
         

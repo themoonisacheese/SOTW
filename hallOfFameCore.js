@@ -852,9 +852,11 @@ function parseContestStartDate(dateRange) {
  * @param {number} announcedContestNum - Contest number of the just-announced post
  * @param {string} announcedPostLink - Full SE API link object of the announced post
  * @param {number} announcedPostId - Question ID of the announced post
+ * @param {number} hofAnswerId - Answer ID of the current HOF answer (used as the
+ *   anchor link for the previous chunk when starting a new chunk)
  * @returns {string} Complete HOF markdown
  */
-function assembleHallOfFamePage(existingEntries, newWinnerDataList, browsingLinks = {}, announcedContestNum = 0, announcedPostLink = '', announcedPostId = 0) {
+function assembleHallOfFamePage(existingEntries, newWinnerDataList, browsingLinks = {}, announcedContestNum = 0, announcedPostLink = '', announcedPostId = 0, hofAnswerId = 0) {
     console.log(`Assembling HOF with ${existingEntries.length} existing entries and ${newWinnerDataList.length} new entries`);
     
     // Merge and sort all real entries
@@ -880,13 +882,24 @@ function assembleHallOfFamePage(existingEntries, newWinnerDataList, browsingLink
     const allContestNums = allEntries.map(e => e.contestNum);
     console.log(`All contest numbers: ${allContestNums.join(', ')}`);
     
-    const minContestNum = allContestNums.length > 0 ? Math.min(...allContestNums) : announcedContestNum;
-    const maxContestNum = allContestNums.length > 0 ? Math.max(...allContestNums) : announcedContestNum;
-    
-    // Find range boundaries (25-entry chunks)
-    const rangeStart = Math.floor((minContestNum - 1) / 25) * 25 + 1;
-    const rangeEnd = Math.ceil(maxContestNum / 25) * 25;
+    // The page covers one 25-contest chunk: the chunk that contains the announced
+    // contest (the next contest to be run). Deriving the range from the announced
+    // contest means crossing a chunk boundary starts a fresh answer instead of
+    // extending the completed previous chunk.
+    const chunkAnchorNum = announcedContestNum > 0
+        ? announcedContestNum
+        : (allContestNums.length > 0 ? Math.max(...allContestNums) : 1);
+    const rangeStart = Math.floor((chunkAnchorNum - 1) / 25) * 25 + 1;
+    const rangeEnd = rangeStart + 24;
     const currentRangeKey = `${rangeStart}-${rangeEnd}`;
+    
+    // Drop entries belonging to the completed previous chunk so they are not
+    // repeated in the new chunk's answer.
+    const previousChunkEntries = allEntries.filter(e => e.contestNum < rangeStart);
+    const chunkEntries = allEntries.filter(e => e.contestNum >= rangeStart && e.contestNum <= rangeEnd);
+    allEntries.length = 0;
+    allEntries.push(...chunkEntries);
+    console.log(`Chunk #${rangeStart}–#${rangeEnd}: keeping ${allEntries.length} entry(ies)`);
     
     // Fill in missing date ranges for real entries using anchor entry
     const anchorEntry = allEntries.slice().reverse().find(e => e.dateRange && parseContestStartDate(e.dateRange));
@@ -919,6 +932,21 @@ function assembleHallOfFamePage(existingEntries, newWinnerDataList, browsingLink
             url: null,
             label: `#${rangeStart} – #${rangeEnd}`
         };
+    }
+    
+    // If this is a new chunk and there were entries in the completed previous
+    // chunk, that chunk now lives in the existing HOF answer. Point its range
+    // link at that answer so the "Jump to" list still reaches it.
+    if (previousChunkEntries.length > 0 && rangeStart > 25) {
+        const previousKey = `${rangeStart - 25}-${rangeStart - 1}`;
+        if (!allBrowsingLinks[previousKey] && hofAnswerId) {
+            allBrowsingLinks[previousKey] = {
+                start: rangeStart - 25,
+                end: rangeStart - 1,
+                url: `//meta.arqade.com/a/${hofAnswerId}`,
+                label: `#${rangeStart - 25} – #${rangeStart - 1}`
+            };
+        }
     }
     
     // Helper: range label with spaced en-dashes
