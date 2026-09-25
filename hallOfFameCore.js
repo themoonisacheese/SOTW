@@ -893,15 +893,9 @@ function assembleHallOfFamePage(existingEntries, newWinnerDataList, browsingLink
     const rangeEnd = rangeStart + 24;
     const currentRangeKey = `${rangeStart}-${rangeEnd}`;
     
-    // Drop entries belonging to the completed previous chunk so they are not
-    // repeated in the new chunk's answer.
-    const previousChunkEntries = allEntries.filter(e => e.contestNum < rangeStart);
-    const chunkEntries = allEntries.filter(e => e.contestNum >= rangeStart && e.contestNum <= rangeEnd);
-    allEntries.length = 0;
-    allEntries.push(...chunkEntries);
-    console.log(`Chunk #${rangeStart}–#${rangeEnd}: keeping ${allEntries.length} entry(ies)`);
-    
-    // Fill in missing date ranges for real entries using anchor entry
+    // Fill in missing date ranges for real entries using an anchor entry. This
+    // considers every parsed entry, including the completed previous chunk, so
+    // the first contests of a fresh chunk still get a date.
     const anchorEntry = allEntries.slice().reverse().find(e => e.dateRange && parseContestStartDate(e.dateRange));
     let anchorDate = null;
     let anchorContestNum = 0;
@@ -919,6 +913,14 @@ function assembleHallOfFamePage(existingEntries, newWinnerDataList, browsingLink
             }
         });
     }
+    
+    // Drop entries belonging to the completed previous chunk so they are not
+    // repeated in the new chunk's answer.
+    const previousChunkEntries = allEntries.filter(e => e.contestNum < rangeStart);
+    const chunkEntries = allEntries.filter(e => e.contestNum >= rangeStart && e.contestNum <= rangeEnd);
+    allEntries.length = 0;
+    allEntries.push(...chunkEntries);
+    console.log(`Chunk #${rangeStart}–#${rangeEnd}: keeping ${allEntries.length} entry(ies)`);
     
     // Build browsing links
     const allBrowsingLinks = {};
