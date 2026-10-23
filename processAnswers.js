@@ -22,6 +22,47 @@ function extractScreenshotUrl(body) {
     return imgMatch ? imgMatch[1] : "N/A";
 }
 
+/**
+ * Extract the game tags an answer's author tagged it with.
+ * Tags are rendered as <a class="post-tag"> links in the answer body, and each
+ * answer carries its own, so tied winners must be parsed separately.
+ */
+function extractGameTags(body) {
+    if (!body) {
+        return [];
+    }
+
+    if (typeof DOMParser !== 'undefined') {
+        // Browser environment
+        const parser = new DOMParser();
+        const doc = parser.parseFromString(body, "text/html");
+        return Array.from(doc.querySelectorAll("a.post-tag"))
+            .map(tag => tag.textContent.trim())
+            .filter((tag, index, all) => tag && all.indexOf(tag) === index);
+    }
+
+    // Node.js environment - simple regex parsing
+    const tagMatches = body.matchAll(/<a\b[^>]*\bclass="[^"]*\bpost-tag\b[^"]*"[^>]*>([\s\S]*?)<\/a>/g);
+    const tagList = [];
+    for (const match of tagMatches) {
+        const tag = match[1].replace(/<[^>]*>/g, "").trim();
+        if (tag && !tagList.includes(tag)) {
+            tagList.push(tag);
+        }
+    }
+    return tagList;
+}
+
+/**
+ * Format a game tag list as the markdown used in announcement posts.
+ */
+function formatGameTags(gameTags) {
+    if (!gameTags || gameTags.length === 0) {
+        return "";
+    }
+    return gameTags.map(tag => `[tag:${tag}]`).join(' ');
+}
+
 function processAnswersCore(answers, post, sotwNumber, themeTitle, themeDescription) {
     const tiedCount = answers.length;
     const upvoteCount = answers[0].score || 0;
@@ -33,25 +74,11 @@ function processAnswersCore(answers, post, sotwNumber, themeTitle, themeDescript
     const screenshotUrls = answers.map(answer => extractScreenshotUrl(answer.body));
     const screenshotUrl = screenshotUrls[0];
 
-    // Parse first answer for tags (used as reference)
-    // Handle both browser (DOMParser) and Node.js (mock) environments
-    let tags = "";
-
-    if (typeof DOMParser !== 'undefined') {
-        // Browser environment
-        const parser = new DOMParser();
-        const doc = parser.parseFromString(answers[0].body, "text/html");
-        const tagElements = doc.querySelectorAll("a.post-tag");
-        tags = Array.from(tagElements).map(tag => tag.textContent).join(", ");
-    } else {
-        // Node.js environment - simple regex parsing
-        const tagMatches = answers[0].body.matchAll(/<a class="post-tag"[^>]*>([^<]+)<\/a>/g);
-        const tagList = [];
-        for (const match of tagMatches) {
-            tagList.push(match[1]);
-        }
-        tags = tagList.join(", ");
-    }
+    // Parse every answer for its own tags: tied winners each tagged a game,
+    // and announcing all of them with the first answer's tag is wrong.
+    const gameTagLists = answers.map(answer => extractGameTags(answer.body));
+    const tagMarkdowns = gameTagLists.map(formatGameTags);
+    const tags = gameTagLists[0].join(", ");
 
     const sotwNumberWithPostfix = (number) => {
         const suffixes = ["th", "st", "nd", "rd"];
@@ -62,8 +89,8 @@ function processAnswersCore(answers, post, sotwNumber, themeTitle, themeDescript
     const nextSotwNumber = parseInt(sotwNumber, 10) + 1;
     const nextSotwNumberWithPostfix = sotwNumberWithPostfix(nextSotwNumber);
 
-    // Format tags for markdown output
-    const tagMarkdown = tags.split(', ').map(tag => `[tag:${tag.trim()}]`).join(' ');
+    // Markdown tags for the single-winner case
+    const tagMarkdown = tagMarkdowns[0];
 
     // Calculate dates
     const contestStartDate = new Date();
@@ -81,7 +108,7 @@ function processAnswersCore(answers, post, sotwNumber, themeTitle, themeDescript
 
     if (tiedCount === 1) {
         // Single winner
-        winnersSection = `To start with, congratulations to the winner of the previous contest! [${answers[0].owner.display_name}][winning post]'s screenshot from ${tagMarkdown} won with ${upvoteCount} upvotes!
+        winnersSection = `To start with, congratulations to the winner of the previous contest! [${answers[0].owner.display_name}][winning post]'s screenshot${tagMarkdown ? ` from ${tagMarkdown}` : ''} won with ${upvoteCount} upvotes!
 
 [![Last week's winning screenshot one][winning screenshot]][winning screenshot]`;
         tieReferenceLinks = `  [winning post]:       https://gaming.meta.stackexchange.com/a/${answers[0].answer_id}\n  [winning screenshot]: ${screenshotUrl}`;
@@ -105,7 +132,9 @@ function processAnswersCore(answers, post, sotwNumber, themeTitle, themeDescript
             const startDateString = startDate.toLocaleDateString("en-US", { year: 'numeric', month: 'long', day: 'numeric' });
             const endDateString = endDate.toLocaleDateString("en-US", { year: 'numeric', month: 'long', day: 'numeric' });
 
-            winnersSection += `- [${answer.owner.display_name}][winner ${index + 1}]'s screenshot from ${tagMarkdown} with ${upvoteCount} upvotes (featured ${startDateString}-${endDateString})\n`;
+            // Each tied winner is announced with their own game tag
+            const winnerTagMarkdown = tagMarkdowns[index];
+            winnersSection += `- [${answer.owner.display_name}][winner ${index + 1}]'s screenshot${winnerTagMarkdown ? ` from ${winnerTagMarkdown}` : ''} with ${upvoteCount} upvotes (featured ${startDateString}-${endDateString})\n`;
 
             const winnerScreenshot = screenshotUrls[index];
             if (winnerScreenshot && winnerScreenshot !== "N/A") {
@@ -172,7 +201,9 @@ ${tieReferenceLinks}
             finishDateString,
             screenshotUrl,
             screenshotUrls,
-            tags
+            tags,
+            gameTagLists,
+            tagMarkdowns
         }
     };
 }

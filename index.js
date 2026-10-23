@@ -157,10 +157,9 @@ document.getElementById('autofetch').addEventListener('click', async () => {
             const template = result.template;
             const metadata = result.metadata;
 
-            // Parse first answer for screenshot and tags
-            const parser = new DOMParser();
-            const doc = parser.parseFromString(answers[0].body, "text/html");
-            const tags = Array.from(doc.querySelectorAll("a.post-tag")).map(tag => tag.textContent).join(", ");
+            // Tags are parsed per answer by processAnswersCore; this field shows
+            // the first winner's tags (every winner gets their own in the post).
+            const tags = metadata.tags;
 
             // Update DOM with results
             const tiedCount = metadata.tiedCount;
