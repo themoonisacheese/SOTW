@@ -184,7 +184,7 @@ ${themeDescription}
 As a reminder, we're always accepting suggestions for themed weeks, and have compiled that suggestion process into a [question of its own][themes collection]. Additionally, there is the [Hall of Fame][hall of fame] you can check out that contains all the previous contest winners.
 
   [contest prev]:       //meta.arqade.com/q/${post.question_id}
-  [contest next]:       //meta.arqade.com/q/17226
+  [contest next]:       //meta.arqade.com/q/
 
 ${tieReferenceLinks}
   [code of conduct]:   //arqade.com/conduct
