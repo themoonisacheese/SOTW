@@ -108,13 +108,13 @@ function processAnswersCore(answers, post, sotwNumber, themeTitle, themeDescript
 
     if (tiedCount === 1) {
         // Single winner
-        winnersSection = `To start with, congratulations to the winner of the previous contest! [${answers[0].owner.display_name}][winning post]'s screenshot${tagMarkdown ? ` from ${tagMarkdown}` : ''} won with ${upvoteCount} upvotes!
+        winnersSection = `To start with, congratulations to the winner of the [previous contest][contest]! [${answers[0].owner.display_name}][winning post]'s screenshot${tagMarkdown ? ` from ${tagMarkdown}` : ''} won with ${upvoteCount} upvotes!
 
 [![Last week's winning screenshot one][winning screenshot]][winning screenshot]`;
         tieReferenceLinks = `  [winning post]:       https://gaming.meta.stackexchange.com/a/${answers[0].answer_id}\n  [winning screenshot]: ${screenshotUrl}`;
     } else {
         // Multiple tied winners
-        winnersSection = `To start with, congratulations to the winners of the previous contest! The contest resulted in a ${tiedCount}-way tie with the following entries:
+        winnersSection = `To start with, congratulations to the winners of the [previous contest][contest prev]! The contest resulted in a ${tiedCount}-way tie with the following entries:
 
 `;
         const screenshotWords = ['one', 'two', 'three', 'four', 'five'];
