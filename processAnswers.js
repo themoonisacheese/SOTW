@@ -164,7 +164,7 @@ ${winnersSection}
 To submit a screenshot, simply post it as an answer to this question, but please take note of the following:
 
 - One screenshot per post, and one post per person.
-- Limited picture modifications, such as cropping, simple filters, and blurring identifying info is allowed, but not adding other images or text.
+- Limited picture modifications, such as cropping, simple filters, and blurring identifying info, are allowed, but not adding other images or text.
 - To ensure a fair playing field, please post screenshots you've taken yourself rather than ones you found online.
 - Stack Exchange's [Code of Conduct][code of conduct] still applies, so if it would be unacceptable to post normally, it's unacceptable here.
 
