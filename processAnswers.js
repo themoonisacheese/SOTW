@@ -108,7 +108,7 @@ function processAnswersCore(answers, post, sotwNumber, themeTitle, themeDescript
 
     if (tiedCount === 1) {
         // Single winner
-        winnersSection = `To start with, congratulations to the winner of the [previous contest][contest]! [${answers[0].owner.display_name}][winning post]'s screenshot${tagMarkdown ? ` from ${tagMarkdown}` : ''} won with ${upvoteCount} upvotes!
+        winnersSection = `To start with, congratulations to the winner of the [previous contest][contest prev]! [${answers[0].owner.display_name}][winning post]'s screenshot${tagMarkdown ? ` from ${tagMarkdown}` : ''} won with ${upvoteCount} upvotes!
 
 [![Last week's winning screenshot one][winning screenshot]][winning screenshot]`;
         tieReferenceLinks = `  [winning post]:       https://gaming.meta.stackexchange.com/a/${answers[0].answer_id}\n  [winning screenshot]: ${screenshotUrl}`;
