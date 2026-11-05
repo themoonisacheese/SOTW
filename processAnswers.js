@@ -108,13 +108,13 @@ function processAnswersCore(answers, post, sotwNumber, themeTitle, themeDescript
 
     if (tiedCount === 1) {
         // Single winner
-        winnersSection = `To start with, congratulations to the winner of the previous contest! [${answers[0].owner.display_name}][winning post]'s screenshot${tagMarkdown ? ` from ${tagMarkdown}` : ''} won with ${upvoteCount} upvotes!
+        winnersSection = `To start with, congratulations to the winner of the [previous contest][contest prev]! [${answers[0].owner.display_name}][winning post]'s screenshot${tagMarkdown ? ` from ${tagMarkdown}` : ''} won with ${upvoteCount} upvotes!
 
 [![Last week's winning screenshot one][winning screenshot]][winning screenshot]`;
         tieReferenceLinks = `  [winning post]:       https://gaming.meta.stackexchange.com/a/${answers[0].answer_id}\n  [winning screenshot]: ${screenshotUrl}`;
     } else {
         // Multiple tied winners
-        winnersSection = `To start with, congratulations to the winners of the previous contest! The contest resulted in a ${tiedCount}-way tie with the following entries:
+        winnersSection = `To start with, congratulations to the winners of the [previous contest][contest prev]! The contest resulted in a ${tiedCount}-way tie with the following entries:
 
 `;
         const screenshotWords = ['one', 'two', 'three', 'four', 'five'];
@@ -163,10 +163,10 @@ ${winnersSection}
 
 To submit a screenshot, simply post it as an answer to this question, but please take note of the following:
 
-- One screenshot per post, and one post per person, please!
-- Limited picture modifications are allowed, such as cropping, simple filters, and blurring of identifying info such as names, but not adding other images or text.
+- One screenshot per post, and one post per person.
+- Limited picture modifications, such as cropping, simple filters, and blurring identifying info, are allowed, but not adding other images or text.
 - To ensure a fair playing field, please post screenshots you've taken yourself rather than ones you found online.
-- Stack Exchange's [Code of Conduct][code of conduct] still applies - so if it would be unacceptable to post normally, it's unacceptable here.
+- Stack Exchange's [Code of Conduct][code of conduct] still applies, so if it would be unacceptable to post normally, it's unacceptable here.
 
 Also, try to avoid pictures that include spoilers. We want everyone to be able to enjoy this contest, so the less spoilers the better.
 
@@ -181,10 +181,10 @@ After the end of the second week, at ${finishDateString}, we will count upvotes 
 
 ${themeDescription}
 
-As a reminder, we're always accepting suggestions for themed weeks, and have compiled that suggestion process into a [question of its own][themes collection]. Additionally, there is the [Hall of Fame][hall of fame] you can check out that contains all the previous contest winners.
+As a reminder, we're always accepting suggestions for themed weeks, and have compiled that suggestion process into a [question of its own][themes collection]. Additionally, you can check out the [Hall of Fame][hall of fame], which contains all the previous contest winners.
 
   [contest prev]:       //meta.arqade.com/q/${post.question_id}
-  [contest next]:       //meta.arqade.com/q/17226
+  [contest next]:       //meta.arqade.com/q/
 
 ${tieReferenceLinks}
   [code of conduct]:   //arqade.com/conduct
